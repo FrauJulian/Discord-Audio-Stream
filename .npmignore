@@ -1,4 +1,6 @@
-src
+.idea
 node_modules
+dist
+src
 tsconfig.json
 tsup.config.ts
