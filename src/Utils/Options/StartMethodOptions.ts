@@ -1,7 +1,7 @@
-export type startParameters = {
+export type startMethodOptions = {
     VoiceChannelID: number;
     GuildID: number;
     VoiceAdapter: number;
-    Type: string;
+    ResourceType: "Link" | "File";
     Resource: string;
 };
