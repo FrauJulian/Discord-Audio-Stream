@@ -1,4 +1,5 @@
-const {joinVoiceChannel, createAudioPlayer, createAudioResource} = require("@discordjs/voice");
+const {
+    joinVoiceChannel, createAudioPlayer, createAudioResource} = require("@discordjs/voice");
 const {join} = require("node:path");
 
 import {startMethodOptions} from "../Utils/Options/StartMethodOptions";
