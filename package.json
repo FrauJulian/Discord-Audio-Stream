@@ -26,7 +26,7 @@
         }
     ],
     "author": "FrauJulian | Julian Lechner",
-    "license": "CUSTOM-LICENSE",
+    "license": "BSD-3-Clause",
     "bugs": {
         "url": "https://github.com/FrauJulian/DiscordAudioStreamNPM/issues"
     },
