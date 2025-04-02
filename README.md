@@ -4,6 +4,15 @@
 ![GitHub package.json version](https://img.shields.io/github/package-json/v/FrauJulian/discord-audio-stream)
 ![GitHub Repo stars](https://img.shields.io/github/stars/FrauJulian/discord-audio-stream?style=social)
 
+# !ATTENTION!
+
+Usefully Links to write docs:
+
+ConnectionOptions:
+- https://github.com/sidorares/node-mysql2/blob/master/typings/mysql/lib/Connection.d.ts#L82
+
+# !ATTENTION!
+
 <p>This NPM package was created to make it easier to stream audio to Discord.</p>
 <p>There is a security feature of discord that stops the stream of audio after some time. This problem can be solved by disconnecting the Discord channel every 1.5 hours for 2 seconds and then reconnecting the channel. (If you use this package!) I recommend using a database to store the data e.g. MySQL, SQLite, json file and other database types.</p>
 <p>The package does not fix this error yet. However, it is currently being worked on!</p>

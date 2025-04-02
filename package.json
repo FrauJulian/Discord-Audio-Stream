@@ -18,6 +18,13 @@
         "audio",
         "music"
     ],
+    "contributors": [
+        {
+            "name": "Julian Lechner aka. FrauJulian",
+            "github": "https://github.com/FrauJulian",
+            "web": "https://fraujulian.xyz/"
+        }
+    ],
     "author": "FrauJulian | Julian Lechner",
     "license": "CUSTOM-LICENSE",
     "bugs": {

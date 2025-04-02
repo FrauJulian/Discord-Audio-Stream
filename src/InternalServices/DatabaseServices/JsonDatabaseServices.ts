@@ -1,7 +1,10 @@
 import {IDatabaseServices} from "./IDatabaseServices";
+import {JsonDao} from "../../DataAccess/Json/JsonDao";
 
 export class JsonDatabaseServices implements IDatabaseServices {
-    constructor(databaseOptions : string) {
-        // IMPLEMENT DATABASE
+    private _databaseDao: JsonDao;
+
+    constructor(databaseOptions : any) {
+        this._databaseDao = new JsonDao(databaseOptions);
     }
 }
