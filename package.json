@@ -1,7 +1,7 @@
 {
     "name": "discord-audio-stream",
-    "version": "0.4.1",
-    "description": "Node libary to make discord audio streaming easier.",
+    "version": "0.5.0",
+    "description": "Node library to make discord audio streaming easier.",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.ts",
@@ -18,23 +18,32 @@
         "audio",
         "music"
     ],
+    "contributors": [
+        {
+            "name": "Julian Lechner aka. FrauJulian",
+            "github": "https://github.com/FrauJulian",
+            "web": "https://fraujulian.xyz/"
+        }
+    ],
     "author": "FrauJulian | Julian Lechner",
-    "license": "CUSTOM-LICENSE",
+    "license": "BSD-3-Clause",
     "bugs": {
         "url": "https://github.com/FrauJulian/DiscordAudioStreamNPM/issues"
     },
     "homepage": "https://github.com/FrauJulian/DiscordAudioStreamNPM#readme",
     "devDependencies": {
         "@types/ejs": "^3.1.5",
-        "@types/node": "^20.12.8",
-        "tsup": "^8.0.2",
-        "typescript": "^5.4.5"
+        "@types/node": "^22.13.16",
+        "tsup": "^8.4.0",
+        "typescript": "^5.8.2"
     },
     "dependencies": {
-        "@discordjs/voice": "^0.16.1",
+        "@discordjs/opus": "^0.10.0",
+        "@discordjs/voice": "^0.18.0",
+        "@noble/ciphers": "^1.2.1",
         "ffmpeg-static": "^5.2.0",
-        "fs": "^0.0.1-security",
-        "libsodium-wrappers": "^0.7.13",
-        "opusscript": "^0.0.8"
+        "libsodium-wrappers": "^0.7.15",
+        "opusscript": "^0.1.1",
+        "sodium-native": "^5.0.0"
     }
 }

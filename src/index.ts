@@ -1,3 +1,3 @@
-export * from "./Methods/StartMethod";
-export * from "./Methods/StopMethod";
-export * from "./Methods/MaxListenerMethod";
+export {AudioManager} from "./Services/AudioManager/AudioManager";
+export type {VoiceConnectionDataModel} from "./Models/VoiceConnectionDataModel";
+export type {VoiceAudioDataModel} from "./Models/VoiceAudioDataModel";
