@@ -43,8 +43,6 @@
         "@noble/ciphers": "^1.2.1",
         "ffmpeg-static": "^5.2.0",
         "libsodium-wrappers": "^0.7.15",
-        "mysql2": "^3.14.0",
-        "node-json-db": "^2.3.1",
         "opusscript": "^0.1.1",
         "sodium-native": "^5.0.0"
     }

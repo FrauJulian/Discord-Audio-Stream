@@ -4,70 +4,82 @@
 ![GitHub package.json version](https://img.shields.io/github/package-json/v/FrauJulian/discord-audio-stream)
 ![GitHub Repo stars](https://img.shields.io/github/stars/FrauJulian/discord-audio-stream?style=social)
 
-# !ATTENTION!
-
-Usefully Links to write docs:
-
-ConnectionOptions:
-- https://github.com/sidorares/node-mysql2/blob/master/typings/mysql/lib/Connection.d.ts#L82
-
-# !ATTENTION!
-
-<p>This NPM package was created to make it easier to stream audio to Discord.</p>
-<p>There is a security feature of discord that stops the stream of audio after some time. This problem can be solved by disconnecting the Discord channel every 1.5 hours for 2 seconds and then reconnecting the channel. (If you use this package!) I recommend using a database to store the data e.g. MySQL, SQLite, json file and other database types.</p>
-<p>The package does not fix this error yet. However, it is currently being worked on!</p>
-
-**This module is designed to work with [discord.js](https://discord.js.org/) v14. This package doesn't support older
+**This module is designed to work with [discord.js/voice](https://www.npmjs.com/package/@discordjs/voice) v0.18. This
+package doesn't support older
 versions!**
 
 ## 👋 Support
 
-Please create an [issue](https://github.com/FrauJulian/DiscordAudioStreamNPM/issues) on github or write [`fraujulian`](https://discord.com/users/860206216893693973) on discord!
+Please create an [issue](https://github.com/FrauJulian/DiscordAudioStreamNPM/issues) on github or write [
+`fraujulian`](https://discord.com/users/860206216893693973) on discord!
 
 ## 📝 Usage
 
 ### Install package
 
 ```bash
-npm i discord-audio-stream
+npm install discord-audio-stream opusscript @discordjs/voice ffmpeg-static sodium-native
 ```
 
-### Code Snippet - Start
+### Create Instance
 
 ```js
-const AudioStream = require("discord-audio-stream");
-
-AudioStream.startAudio({
-    VoiceChannelID: 0, //Integer | voice channel id | e.g. interaction.member.voice.channel.id
-    GuildID: 0, //Integer | guild id | e.g. interaction.guild.id
-    VoiceAdapter: 0, //Integer | aoice adapter creator | e.g. interaction.guild.voiceAdapterCreator
-    Type: "", //String | choose the Audio Resource | File or Link
-    Resource: "", //String | audio stream link or file location | e.g. https://synradiode.stream.laut.fm/synradiode
-})
+let audioManager = new AudioManager();
 ```
 
-### Code Snippet - Stop
+or (with parameters)
 
 ```js
-const AudioStream = require("discord-audio-stream");
-
-AudioStream.stopAudio({
-    GuildID: 0, //Integer | guild id | e.g. interaction.guild.id
-})
+let audioManager = new AudioManager({
+        VoiceChannelId: 0, //voice channel id where to play music
+        GuildId: 0, //guild id
+        VoiceAdapter: 0 //guild VoiceAdapter
+    },
+    {
+        ResourceType: "", //resource type like link or file
+        Resource: "" //auto play link or file name
+    });
 ```
 
-### Code Snippet - Set Max Listeners
+### Properties of the AudioManager
 
-```js
-const AudioStream = require("discord-audio-stream");
+#### Properties
 
-AudioStream.setMaxAudioListeners({
-    GuildID: 0, //Integer | guild id | e.g. interaction.guild.id
-    MaxListeners: 0, //Integer | max Listeners | e.g. 30
-})
-```
+| Callable with     | Type                         | Description                                     |
+|-------------------|------------------------------|-------------------------------------------------|
+| `VoiceConnection` | **VoiceConnection**          | VoiceConnection instance from discord.js/voice. |
+| `AudioPlayer`     | **AudioPlayer**              | AudioPlayer instance from discord.js/voice.     |
+| `AudioResource`   | **AudioResource**            | AudioResource instance from discord.js/voice.   |
+| `IsActive`        | boolean                      | Variable to check if audio stream is active.    |
+| `IsAudioPlaying`  | boolean                      | Variable to check if audio is playing.          |
+| `ConnectionData`  | **VoiceConnectionDataModel** | Global variable for connection data.            |
+| `AudioData`       | **AudioDataModel**           | Global variable for audio data.                 |
+
+#### Methods
+
+| Callable with                  | Parameters                                                                                             | Return type | Description                                                        |
+|--------------------------------|--------------------------------------------------------------------------------------------------------|-------------|--------------------------------------------------------------------|
+| `OverrideOptions`              | `connectionData` (type of **VoiceConnectionDataModel**), `audioData` (type of **VoiceAudioDataModel**) | void        | Method to override global variables, connectionData and audioData. |
+| `CreateConnection`             | `isRenew` (type of boolean, default value is false)                                                    | void        | Method to join the voice connection.                               |
+| `PlayAudioOnConnection`        |                                                                                                        | void        | Method to play audio on the existing voice connection.             |
+| `PauseAudio`                   |                                                                                                        | void        | Method to pause the audio.                                         |
+| `ResumeAudio`                  |                                                                                                        | void        | Method to resume the audio.                                        |
+| `StopAudioOnConnection`        |                                                                                                        | void        | Method to stop the audio without destroying voice connection.      |
+| `CreateConnectionAndPlayAudio` |                                                                                                        | void        | Method to join the voice connection and play audio.                |
+| `DestroyConnection`            |                                                                                                        | void        | Method to destroy the voice connection.                            |
+| `SetVolume`                    | `volume` (type of number, 0 - 100 percent)                                                             | void        | Method to set the audio volume.                                    | Method to set the volume of the audio.                             |
+| `SetMaxListeners`              | `maxListeners` (type of number)                                                                        | void        | Method to set the max listeners of the audio stream.               |
+
+##### Types History
+
+- [**VoiceConnection** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/VoiceConnection.ts#L166)
+- [**AudioPlayer** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/audio/AudioPlayer.ts#L155)
+- [**AudioResource** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/audio/AudioResource.ts#L44)
+- [**VoiceConnectionDataModel**](https://github.com/FrauJulian/Discord-Audio-Stream/blob/main/src/Models/VoiceConnectionDataModel.d.ts#L3) (custom type)
+- [**VoiceAudioDataModel**](https://github.com/FrauJulian/Discord-Audio-Stream/blob/main/src/Models/VoiceAudioDataModel.d.ts#L1) (custom type)
 
 ## 📋 Credits:
+
 ~ [**FrauJulian**](https://fraujulian.xyz/).
 
 ## 🤝 Enjoy the package?
