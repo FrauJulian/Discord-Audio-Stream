@@ -6,7 +6,7 @@
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.ts",
     "scripts": {
-        "updateDependencies": "npx npm-check-updates --upgrade && npm install && echso SUCCEED UPDATE",
+        "updateDependencies": "npx npm-check-updates --upgrade && npm install && echo SUCCEED UPDATE",
         "cleanSolution": "del-cli dist && echo SUCCEED CLEAN",
         "updateVersion": "npm version patch --no-git-tag-version && echo SUCCEED UPDATE VERSION",
         "buildPackage": "tsup && echo SUCCEED BUILD && npm run updateVersion",
