@@ -50,8 +50,6 @@ let audioManager = new AudioManager({
 | `VoiceConnection` | **VoiceConnection**          | VoiceConnection instance from discord.js/voice. |
 | `AudioPlayer`     | **AudioPlayer**              | AudioPlayer instance from discord.js/voice.     |
 | `AudioResource`   | **AudioResource**            | AudioResource instance from discord.js/voice.   |
-| `IsActive`        | boolean                      | Variable to check if audio stream is active.    |
-| `IsAudioPlaying`  | boolean                      | Variable to check if audio is playing.          |
 | `ConnectionData`  | **VoiceConnectionDataModel** | Global variable for connection data.            |
 | `AudioData`       | **AudioDataModel**           | Global variable for audio data.                 |
 
