@@ -7,8 +7,8 @@ import {
     VoiceConnection
 } from "@discordjs/voice";
 import {IAudioManager} from "./IAudioManager";
-import {VoiceConnectionDataModel} from "../../Models/VoiceConnectionDataModel";
-import {VoiceAudioDataModel} from "../../Models/VoiceAudioDataModel";
+import {VoiceConnectionDataModel} from "../Models/VoiceConnectionDataModel";
+import {VoiceAudioDataModel} from "../Models/VoiceAudioDataModel";
 import {join} from "node:path";
 
 export class AudioManager implements IAudioManager {
@@ -16,18 +16,18 @@ export class AudioManager implements IAudioManager {
     public AudioPlayer: AudioPlayer | null = null;
     public AudioResource: AudioResource | null = null;
 
-    public IsActive: boolean = false;
-    public IsAudioPlaying: boolean = false;
+    protected IsActive: boolean = false;
+    protected IsAudioPlaying: boolean = false;
 
-    public ConnectionData: VoiceConnectionDataModel | null;
-    public AudioData: VoiceAudioDataModel | null;
+    protected ConnectionData: VoiceConnectionDataModel | null;
+    protected AudioData: VoiceAudioDataModel | null;
 
     constructor(connectionData: VoiceConnectionDataModel | null = null, audioData: VoiceAudioDataModel | null = null) {
         this.ConnectionData = connectionData;
         this.AudioData = audioData;
     }
 
-    OverrideOptions(connectionData: VoiceConnectionDataModel | null = null, audioData: VoiceAudioDataModel | null = null): void {
+    public OverrideOptions(connectionData: VoiceConnectionDataModel | null = null, audioData: VoiceAudioDataModel | null = null): void {
         this.ConnectionData = connectionData;
         this.AudioData = audioData;
     }
