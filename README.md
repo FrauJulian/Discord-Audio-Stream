@@ -83,3 +83,5 @@ let audioManager = new AudioManager({
 ## 🤝 Enjoy the package?
 
 Give it a star ⭐ on [github](https://github.com/FrauJulian/discord-audio-stream)!
+
+### Greetings from Austria! ⛰️
