@@ -11,7 +11,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: use NodeJS v22.16.0
         uses: actions/setup-node@v4
         with:
           node-version: '22.16.0'
@@ -23,14 +23,13 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm install
 
-      - name: Run Build
+      - name: run Rollout Build
         run: npm run rolloutBuild
 
-      # Optional: Prüfe, ob du wirklich veröffentlichen möchtest
-      - name: Publish Package
+      - name: Publish Library
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
