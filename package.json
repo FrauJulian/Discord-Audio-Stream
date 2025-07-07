@@ -1,49 +1,47 @@
 {
     "name": "discord-audio-stream",
-    "version": "0.5.0",
-    "description": "Node library to make discord audio streaming easier.",
+    "version": "0.6.8",
+    "description": "NodeJS library to make stream any audio on discord easier.",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.ts",
     "scripts": {
-        "build": "tsup"
+        "updateDependencies": "npx npm-check-updates --upgrade && npm install && echso SUCCEED UPDATE",
+        "cleanSolution": "del-cli dist && echo SUCCEED CLEAN",
+        "buildPackage": "tsup && echo SUCCEED BUILD && npm version patch --no-git-tag-version",
+        "rolloutBuild": "npm run updateDependencies && npm run cleanSolution && tsup"
     },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/FrauJulian/DiscordAudioStreamNPM.git"
-    },
+    "repository": "https://github.com/FrauJulian/Discord-Audio-Stream",
+    "bugs": "https://github.com/FrauJulian/Discord-Audio-Stream/issues",
     "keywords": [
         "discordjs-v14",
         "stream",
         "audio",
         "music"
     ],
-    "contributors": [
-        {
-            "name": "Julian Lechner aka. FrauJulian",
-            "github": "https://github.com/FrauJulian",
-            "web": "https://fraujulian.xyz/"
-        }
-    ],
-    "author": "FrauJulian | Julian Lechner",
-    "license": "BSD-3-Clause",
-    "bugs": {
-        "url": "https://github.com/FrauJulian/DiscordAudioStreamNPM/issues"
+    "author": {
+        "name": "Lechner Julian",
+        "nickname": "FrauJulian",
+        "email": "contact@fraujulian.xyz",
+        "website": "https://fraujulian.xyz/"
     },
-    "homepage": "https://github.com/FrauJulian/DiscordAudioStreamNPM#readme",
-    "devDependencies": {
-        "@types/ejs": "^3.1.5",
-        "@types/node": "^22.13.16",
-        "tsup": "^8.4.0",
-        "typescript": "^5.8.2"
-    },
+    "private": false,
     "dependencies": {
         "@discordjs/opus": "^0.10.0",
         "@discordjs/voice": "^0.18.0",
-        "@noble/ciphers": "^1.2.1",
+        "@noble/ciphers": "^1.3.0",
+        "@stablelib/xchacha20poly1305": "^2.0.1",
         "ffmpeg-static": "^5.2.0",
         "libsodium-wrappers": "^0.7.15",
         "opusscript": "^0.1.1",
-        "sodium-native": "^5.0.0"
+        "sodium-native": "^5.0.6"
+    },
+    "devDependencies": {
+        "@types/ejs": "^3.1.5",
+        "@types/node": "^24.0.10",
+        "del-cli": "^6.0.0",
+        "npm-check-updates": "^18.0.1",
+        "tsup": "^8.5.0",
+        "typescript": "^5.8.3"
     }
 }
