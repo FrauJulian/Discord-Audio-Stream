@@ -1,8 +1,10 @@
 .idea
 .git
+.github
 .gitignore
 .npmignore
 node_modules
 src
+README.md
 tsconfig.json
 tsup.config.ts
