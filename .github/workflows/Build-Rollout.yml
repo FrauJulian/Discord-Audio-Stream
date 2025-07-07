@@ -1,0 +1,28 @@
+name: Build Rollout
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout Repository
+        uses: actions/checkout@v4
+
+      - name: use NodeJS v22.16.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+
+      - name: install Dependencies
+        run: npm install
+
+      - name: run Build
+        run: npm run build
+
+      - name: Publish Library
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+
