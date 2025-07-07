@@ -6,23 +6,31 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: checkout Repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: use NodeJS v22.16.0
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22.16.0'
+          registry-url: 'https://registry.npmjs.org'
+          always-auth: true
 
-      - name: install Dependencies
+      - name: Create .npmrc
+        run: echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > ~/.npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Install dependencies
         run: npm install
 
-      - name: run Build
+      - name: Run Build
         run: npm run rolloutBuild
 
-      - name: Publish Library
+      # Optional: Prüfe, ob du wirklich veröffentlichen möchtest
+      - name: Publish Package
         run: npm publish
         env:
-          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
-
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
