@@ -1,6 +1,6 @@
-import {DiscordGatewayAdapterCreator} from "@discordjs/voice";
+import type {DiscordGatewayAdapterCreator} from "@discordjs/voice";
 
-export interface VoiceConnectionDataModel {
+export default interface VoiceConnectionDataModel {
     /**
      * The ID of the voice channel to connect to.
      */

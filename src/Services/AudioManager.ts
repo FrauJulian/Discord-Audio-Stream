@@ -6,12 +6,12 @@ import {
     joinVoiceChannel,
     VoiceConnection
 } from "@discordjs/voice";
-import {IAudioManager} from "./IAudioManager";
-import {VoiceConnectionDataModel} from "../Models/VoiceConnectionDataModel";
-import {VoiceAudioDataModel} from "../Models/VoiceAudioDataModel";
+import type IAudioManager from "./IAudioManager";
+import type VoiceConnectionDataModel from "../Models/VoiceConnectionDataModel";
+import type VoiceAudioDataModel from "../Models/VoiceAudioDataModel";
 import {join} from "node:path";
 
-export class AudioManager implements IAudioManager {
+export default class AudioManager implements IAudioManager {
     public VoiceConnection: VoiceConnection | null = null;
     public AudioPlayer: AudioPlayer | null = null;
     public AudioResource: AudioResource | null = null;
