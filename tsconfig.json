@@ -1,25 +1,28 @@
 {
-    "compilerOptions": {
-        "strict": true,
-        "allowJs": false,
-        "noImplicitAny": true,
-        "esModuleInterop": true,
-        "strictNullChecks": true,
-        "target": "ES2022",
-        "moduleResolution": "Node",
-        "module": "CommonJS",
-        "declaration": true,
-        "isolatedModules": true,
-        "noEmit": true,
-        "outDir": "dist",
-        "types": [
-            "node"
-        ],
-        "typeRoots": [
-            "node_modules/@types"
-        ]
-    },
-
-    "include": ["src"],
-    "exclude": ["node_modules"]
+  "compilerOptions": {
+    "strict": true,
+    "allowJs": false,
+    "noImplicitAny": true,
+    "esModuleInterop": true,
+    "strictNullChecks": true,
+    "target": "ES2022",
+    "moduleResolution": "Node",
+    "module": "CommonJS",
+    "declaration": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "outDir": "dist",
+    "types": [
+      "node"
+    ],
+    "typeRoots": [
+      "node_modules/@types"
+    ]
+  },
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

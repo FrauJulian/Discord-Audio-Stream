@@ -1,10 +1,25 @@
 {
     "name": "discord-audio-stream",
-    "version": "0.6.8",
+    "version": "0.6.10",
     "description": "NodeJS library to make stream any audio on discord easier.",
+    "exports": {
+        ".": {
+            "require": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.js"
+            },
+            "import": {
+                "types": "./dist/index.d.mts",
+                "default": "./dist/index.mjs"
+            }
+        }
+    },
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
     "scripts": {
         "updateDependencies": "npx npm-check-updates --upgrade && npm install && echo SUCCEED UPDATE",
         "cleanSolution": "del-cli dist && echo SUCCEED CLEAN",
@@ -14,35 +29,48 @@
     },
     "repository": "https://github.com/FrauJulian/Discord-Audio-Stream",
     "bugs": "https://github.com/FrauJulian/Discord-Audio-Stream/issues",
+    "funding": "https://ko-fi.com/FrauJulian",
     "keywords": [
-        "discordjs-v14",
-        "stream",
+        "discordjs",
+        "discord.js",
+        "discord",
         "audio",
-        "music"
+        "voice",
+        "stream"
     ],
-    "author": {
-        "name": "Lechner Julian",
-        "nickname": "FrauJulian",
-        "email": "contact@fraujulian.xyz",
-        "website": "https://fraujulian.xyz/"
-    },
-    "private": false,
+    "contributors": [
+        {
+            "name": "Lechner Julian",
+            "nickname": "FrauJulian",
+            "email": "office@lechner-systems.at",
+            "website": "https://lechner-systems.at/"
+        }
+    ],
     "dependencies": {
-        "@discordjs/opus": "^0.10.0",
         "@discordjs/voice": "^0.18.0",
         "@noble/ciphers": "^1.3.0",
         "@stablelib/xchacha20poly1305": "^2.0.1",
-        "ffmpeg-static": "^5.2.0",
-        "libsodium-wrappers": "^0.7.15",
-        "opusscript": "^0.1.1",
         "sodium-native": "^5.0.6"
     },
     "devDependencies": {
         "@types/ejs": "^3.1.5",
-        "@types/node": "^24.0.10",
+        "@types/node": "^24.1.0",
         "del-cli": "^6.0.0",
-        "npm-check-updates": "^18.0.1",
+        "npm-check-updates": "^18.0.2",
         "tsup": "^8.5.0",
         "typescript": "^5.8.3"
+    },
+    "peerDependencies": {
+        "libsodium-wrappers": "^0.7.15",
+        "opusscript": "^0.1.1",
+        "ffmpeg-static": "^5.2.0"
+    },
+    "engines": {
+        "node": ">=18"
+    },
+    "private": false,
+    "publishConfig": {
+        "access": "public",
+        "provenance": true
     }
 }

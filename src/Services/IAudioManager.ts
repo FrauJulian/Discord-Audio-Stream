@@ -1,8 +1,7 @@
-import {AudioPlayer, AudioResource, VoiceConnection} from "@discordjs/voice";
-import {VoiceAudioDataModel} from "../Models/VoiceAudioDataModel";
-import {VoiceConnectionDataModel} from "../Models/VoiceConnectionDataModel";
+import type VoiceConnectionDataModel from "../Models/VoiceConnectionDataModel";
+import type VoiceAudioDataModel from "../Models/VoiceAudioDataModel";
 
-export interface IAudioManager {
+export default interface IAudioManager {
     OverrideOptions(connectionData?: VoiceConnectionDataModel | null, audioData?: VoiceAudioDataModel | null): void;
 
     CreateConnection(isRenew: boolean): void;
