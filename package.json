@@ -1,6 +1,7 @@
 {
     "name": "discord-audio-stream",
-    "version": "0.6.11",
+    "version": "0.6.12",
+    "license": "LGPL-2.1-only",
     "description": "NodeJS library to make stream any audio on discord easier.",
     "exports": {
         ".": {
@@ -50,7 +51,6 @@
         }
     ],
     "dependencies": {
-        "@discordjs/voice": "^0.18.0",
         "@noble/ciphers": "^1.3.0",
         "@stablelib/xchacha20poly1305": "^2.0.1",
         "sodium-native": "^5.0.6"
@@ -64,6 +64,7 @@
         "typescript": "^5.8.3"
     },
     "peerDependencies": {
+        "@discordjs/voice": "^0.18.0",
         "libsodium-wrappers": "^0.7.15",
         "opusscript": "^0.1.1",
         "ffmpeg-static": "^5.2.0"
