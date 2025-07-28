@@ -10,7 +10,7 @@ import {join} from "node:path";
 import {VoiceConnectionDataModel} from "./types/VoiceConnectionDataModel";
 import {VoiceAudioDataModel} from "./types/VoiceAudioDataModel";
 
-export default class AudioManager {
+declare class AudioManager {
     public VoiceConnection: VoiceConnection | null = null;
     public AudioPlayer: AudioPlayer | null = null;
     public AudioResource: AudioResource | null = null;
