@@ -1,4 +1,4 @@
-export default interface VoiceAudioDataModel {
+export type VoiceAudioDataModel = {
     /**
      * The unique identifier for the audio resource.
      */
