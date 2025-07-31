@@ -29,7 +29,8 @@
         "cleanSolution": "del-cli dist && echo SUCCEED CLEAN",
         "updateVersion": "npm version patch --no-git-tag-version && echo SUCCEED UPDATE VERSION",
         "buildPackage": "tsup && echo SUCCEED BUILD && npm run updateVersion",
-        "rolloutBuild": "npm run updateDependencies && npm run cleanSolution && tsup"
+        "rolloutBuild": "npm run updateDependencies && npm run cleanSolution && tsup",
+        "unit-tests": "npx jest --config jest.config.js --verbose --detectOpenHandles"
     },
     "repository": "https://github.com/FrauJulian/Discord-Audio-Stream",
     "bugs": "https://github.com/FrauJulian/Discord-Audio-Stream/issues",
@@ -57,17 +58,20 @@
     },
     "devDependencies": {
         "@types/ejs": "^3.1.5",
+        "@types/jest": "^30.0.0",
         "@types/node": "^24.1.0",
         "del-cli": "^6.0.0",
+        "jest": "^30.0.5",
         "npm-check-updates": "^18.0.2",
+        "ts-jest": "^29.4.0",
         "tsup": "^8.5.0",
         "typescript": "^5.8.3"
     },
     "peerDependencies": {
         "@discordjs/voice": "^0.18.0",
+        "ffmpeg-static": "^5.2.0",
         "libsodium-wrappers": "^0.7.15",
-        "opusscript": "^0.1.1",
-        "ffmpeg-static": "^5.2.0"
+        "opusscript": "^0.1.1"
     },
     "engines": {
         "node": ">=18"
