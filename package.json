@@ -1,79 +1,67 @@
 {
-    "name": "discord-audio-stream",
-    "version": "0.6.12",
-    "license": "LGPL-2.1-only",
-    "description": "NodeJS library to make stream any audio on discord easier.",
-    "exports": {
-        ".": {
-            "require": {
-                "types": "./dist/index.d.ts",
-                "default": "./dist/index.js"
-            },
-            "import": {
-                "types": "./dist/index.d.mts",
-                "default": "./dist/index.mjs"
-            }
-        }
-    },
-    "main": "./dist/index.js",
-    "module": "./dist/index.mjs",
-    "types": "./dist/index.d.ts",
-    "files": [
-        "dist"
-    ],
-    "directories": {
-        "lib": "src"
-    },
-    "scripts": {
-        "updateDependencies": "npx npm-check-updates --upgrade && npm install && echo SUCCEED UPDATE",
-        "cleanSolution": "del-cli dist && echo SUCCEED CLEAN",
-        "updateVersion": "npm version patch --no-git-tag-version && echo SUCCEED UPDATE VERSION",
-        "buildPackage": "tsup && echo SUCCEED BUILD && npm run updateVersion",
-        "rolloutBuild": "npm run updateDependencies && npm run cleanSolution && tsup"
-    },
-    "repository": "https://github.com/FrauJulian/Discord-Audio-Stream",
-    "bugs": "https://github.com/FrauJulian/Discord-Audio-Stream/issues",
-    "funding": "https://ko-fi.com/FrauJulian",
-    "keywords": [
-        "discordjs",
-        "discord.js",
-        "discord",
-        "audio",
-        "voice",
-        "stream"
-    ],
-    "contributors": [
-        {
-            "name": "Lechner Julian",
-            "nickname": "FrauJulian",
-            "email": "office@lechner-systems.at",
-            "website": "https://lechner-systems.at/"
-        }
-    ],
-    "dependencies": {
-        "@noble/ciphers": "^1.3.0",
-        "@stablelib/xchacha20poly1305": "^2.0.1",
-        "sodium-native": "^5.0.6"
-    },
-    "devDependencies": {
-        "@types/ejs": "^3.1.5",
-        "@types/node": "^24.1.0",
-        "del-cli": "^6.0.0",
-        "npm-check-updates": "^18.0.2",
-        "tsup": "^8.5.0",
-        "typescript": "^5.8.3"
-    },
-    "peerDependencies": {
-        "@discordjs/voice": "^0.18.0",
-        "libsodium-wrappers": "^0.7.15",
-        "opusscript": "^0.1.1",
-        "ffmpeg-static": "^5.2.0"
-    },
-    "engines": {
-        "node": ">=18"
-    },
-    "private": false,
-    "publishConfig": {
-        "access": "public"
+  "name": "discord-audio-stream",
+  "version": "0.6.13",
+  "license": "LGPL-2.1-only",
+  "description": "NodeJS library to make stream any audio on discord easier.",
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      }
     }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "directories": {
+    "lib": "src"
+  },
+  "scripts": {
+    "updateDependencies": "npx npm-check-updates --upgrade && npm install && echo SUCCEED UPDATE",
+    "cleanSolution": "del-cli dist && echo SUCCEED CLEAN",
+    "updateVersion": "npm version patch --no-git-tag-version && echo SUCCEED UPDATE VERSION",
+    "buildPackage": "tsup && echo SUCCEED BUILD && npm run updateVersion",
+    "rolloutBuild": "npm run updateDependencies && npm run cleanSolution && tsup"
+  },
+  "repository": "https://github.com/FrauJulian/Discord-Audio-Stream",
+  "bugs": "https://github.com/FrauJulian/Discord-Audio-Stream/issues",
+  "funding": "https://ko-fi.com/FrauJulian",
+  "keywords": [
+    "discordjs",
+    "discord.js",
+    "discord",
+    "audio",
+    "voice",
+    "stream"
+  ],
+  "contributors": [
+    "Lechner Julian - FrauJulian <office@lechner-systems.at>"
+  ],
+  "dependencies": {
+    "@discordjs/voice": "^0.18.0"
+  },
+  "devDependencies": {
+    "@types/ejs": "^3.1.5",
+    "@types/node": "^24.1.0",
+    "del-cli": "^6.0.0",
+    "npm-check-updates": "^18.0.2",
+    "ts-jest": "^29.4.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  }
 }
