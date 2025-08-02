@@ -29,7 +29,7 @@
     "cleanSolution": "del-cli dist && echo SUCCEED CLEAN",
     "updateVersion": "npm version patch --no-git-tag-version && echo SUCCEED UPDATE VERSION",
     "buildPackage": "tsup && echo SUCCEED BUILD && npm run updateVersion",
-    "rolloutBuild": "npm run updateDependencies && npm run cleanSolution && tsup",
+    "rolloutBuild": "npm run updateDependencies && npm run cleanSolution && tsup"
   },
   "repository": "https://github.com/FrauJulian/Discord-Audio-Stream",
   "bugs": "https://github.com/FrauJulian/Discord-Audio-Stream/issues",
