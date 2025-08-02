@@ -11,22 +11,27 @@ import {VoiceConnectionDataModel} from "./types/VoiceConnectionDataModel";
 import {VoiceAudioDataModel} from "./types/VoiceAudioDataModel";
 
 export default class AudioManager {
-    public VoiceConnection: VoiceConnection | null = null;
-    public AudioPlayer: AudioPlayer | null = null;
-    public AudioResource: AudioResource | null = null;
+    public VoiceConnection?: VoiceConnection = undefined;
+    public AudioPlayer?: AudioPlayer = undefined;
+    public AudioResource?: AudioResource = undefined;
 
-    protected IsActive: boolean = false;
-    protected IsAudioPlaying: boolean = false;
+    protected IsActive?: boolean = undefined;
+    protected IsAudioPlaying?: boolean = undefined;
 
-    protected ConnectionData: VoiceConnectionDataModel | null;
-    protected AudioData: VoiceAudioDataModel | null;
+    protected ConnectionData?: VoiceConnectionDataModel;
+    protected AudioData?: VoiceAudioDataModel;
 
-    constructor(connectionData: VoiceConnectionDataModel | null = null, audioData: VoiceAudioDataModel | null = null) {
+    private TimeoutHandle?: NodeJS.Timeout;
+    private RenewInMs?: number;
+
+    constructor(connectionData?: VoiceConnectionDataModel, audioData?: VoiceAudioDataModel, renewInMs = 5400000) {
+        this.RenewInMs = renewInMs;
         this.ConnectionData = connectionData;
         this.AudioData = audioData;
     }
 
-    public OverrideOptions(connectionData: VoiceConnectionDataModel | null = null, audioData: VoiceAudioDataModel | null = null): void {
+    public OverrideOptions(connectionData?: VoiceConnectionDataModel, audioData?: VoiceAudioDataModel, renewInMs = 5400000): void {
+        this.RenewInMs = renewInMs;
         this.ConnectionData = connectionData;
         this.AudioData = audioData;
     }
@@ -48,9 +53,9 @@ export default class AudioManager {
             adapterCreator: this.ConnectionData!.VoiceAdapter
         });
 
-        setTimeout((): void => {
+        this.TimeoutHandle = setTimeout((): void => {
             this.RenewConnectionAndAudio();
-        }, 5400000);
+        }, this.RenewInMs);
     }
 
     public PlayAudioOnConnection(): void {
@@ -82,13 +87,21 @@ export default class AudioManager {
     }
 
     public PauseAudio(): void {
-        this.CheckIfNull(this.AudioPlayer);
-        this.AudioPlayer!.pause();
+        if (this.IsAudioPlaying) {
+            this.AudioPlayer!.pause();
+            this.IsAudioPlaying = false;
+        } else {
+            throw new TypeError("Audio is not playing.");
+        }
     }
 
     public ResumeAudio(): void {
-        this.CheckIfNull(this.AudioPlayer);
-        this.AudioPlayer!.unpause();
+        if (!this.IsAudioPlaying) {
+            this.AudioPlayer!.unpause();
+            this.IsAudioPlaying = true;
+        } else {
+            throw new TypeError("Audio is playing.");
+        }
     }
 
     public CreateConnectionAndPlayAudio(): void {
@@ -107,13 +120,32 @@ export default class AudioManager {
     }
 
     public SetMaxListeners(maxListeners: number): void {
-        this.CheckIfNull(this.VoiceConnection);
         this.VoiceConnection!.setMaxListeners(maxListeners);
     }
 
     public SetVolume(volumeInPercent: number): void {
         if (volumeInPercent < 0 || volumeInPercent > 100) throw new Error("Volume must be between 0 and 100.");
+        this.CheckIfNull(this.VoiceConnection);
         this.AudioResource!.volume!.setVolume(volumeInPercent / 100);
+    }
+
+    public Dispose(): void {
+        if (this.IsActive != undefined) {
+            this.DestroyConnection();
+            this.ConnectionData = undefined;
+            this.VoiceConnection = undefined;
+        }
+
+        if (this.IsAudioPlaying != undefined) {
+            this.AudioData = undefined;
+            this.AudioResource = undefined;
+            this.AudioPlayer = undefined;
+        }
+
+        if (this.TimeoutHandle) {
+            clearTimeout(this.TimeoutHandle);
+            this.TimeoutHandle = undefined;
+        }
     }
 
     private RenewConnectionAndAudio(): void {

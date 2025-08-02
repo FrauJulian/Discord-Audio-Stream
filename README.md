@@ -18,8 +18,31 @@ Please create an [issue](https://github.com/FrauJulian/DiscordAudioStreamNPM/iss
 ### Install package
 
 ```bash
-npm install discord-audio-stream opusscript @discordjs/voice ffmpeg-static sodium-native
+npm install discord-audio-stream
+yarn add discord-audio-stream
+pnpm add discord-audio-stream
+bun add discord-audio-stream
 ```
+
+**Encryption Libraries (npm install):**
+
+> You only need to install one of these libraries if your system does not support `aes-256-gcm` (verify by running `require('node:crypto').getCiphers().includes('aes-256-gcm')`).
+
+- `sodium-native`
+- `sodium`
+- `@stablelib/xchacha20poly1305`
+- `@noble/ciphers`
+- `libsodium-wrappers`
+
+**Opus Libraries (npm install):**
+
+- `@discordjs/opus`
+- `opusscript`
+
+**FFmpeg:**
+
+- [`FFmpeg`](https://ffmpeg.org/) (installed and added to environment)
+- `ffmpeg-static`
 
 ### Create Instance
 
@@ -65,6 +88,7 @@ let audioManager = new AudioManager({
 | `StopAudioOnConnection`        |                                                                                                        | void        | Method to stop the audio without destroying voice connection.      |
 | `CreateConnectionAndPlayAudio` |                                                                                                        | void        | Method to join the voice connection and play audio.                |
 | `DestroyConnection`            |                                                                                                        | void        | Method to destroy the voice connection.                            |
+| `Dispose`                      |                                                                                                        | void        | Dispose all data in object.                                        |
 | `SetVolume`                    | `volume` (type of number, 0 - 100 percent)                                                             | void        | Method to set the audio volume.                                    | Method to set the volume of the audio.                             |
 | `SetMaxListeners`              | `maxListeners` (type of number)                                                                        | void        | Method to set the max listeners of the audio stream.               |
 
