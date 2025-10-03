@@ -43,19 +43,19 @@
     "stream"
   ],
   "contributors": [
-    "Lechner Julian - FrauJulian <office@lechner-systems.at>"
+    "FrauJulian - Lechner Julian <fraujulian@lechner.top>"
   ],
   "dependencies": {
-    "@discordjs/voice": "^0.18.0"
+    "@discordjs/voice": "^0.19.0"
   },
   "devDependencies": {
     "@types/ejs": "^3.1.5",
-    "@types/node": "^24.1.0",
-    "del-cli": "^6.0.0",
-    "npm-check-updates": "^18.0.2",
-    "ts-jest": "^29.4.0",
+    "@types/node": "^24.6.2",
+    "del-cli": "^7.0.0",
+    "npm-check-updates": "^19.0.0",
+    "ts-jest": "^29.4.4",
     "tsup": "^8.5.0",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=18"

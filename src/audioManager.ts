@@ -7,16 +7,15 @@ import {
     VoiceConnection
 } from "@discordjs/voice";
 import {join} from "node:path";
-import {VoiceConnectionDataModel} from "./types/VoiceConnectionDataModel";
-import {VoiceAudioDataModel} from "./types/VoiceAudioDataModel";
+import {VoiceAudioDataModel, VoiceConnectionDataModel} from "./typings";
 
 export default class AudioManager {
-    public VoiceConnection?: VoiceConnection = undefined;
-    public AudioPlayer?: AudioPlayer = undefined;
-    public AudioResource?: AudioResource = undefined;
+    public VoiceConnection?: VoiceConnection;
+    public AudioPlayer?: AudioPlayer;
+    public AudioResource?: AudioResource;
 
-    protected IsActive?: boolean = undefined;
-    protected IsAudioPlaying?: boolean = undefined;
+    protected IsActive?: boolean;
+    protected IsAudioPlaying?: boolean;
 
     protected ConnectionData?: VoiceConnectionDataModel;
     protected AudioData?: VoiceAudioDataModel;
@@ -30,9 +29,15 @@ export default class AudioManager {
         this.AudioData = audioData;
     }
 
-    public OverrideOptions(connectionData?: VoiceConnectionDataModel, audioData?: VoiceAudioDataModel, renewInMs = 5400000): void {
+    public OverrideRenewInMs(renewInMs: number = 5400000): void {
         this.RenewInMs = renewInMs;
+    }
+
+    public OverrideVoiceConnectionData(connectionData: VoiceConnectionDataModel): void {
         this.ConnectionData = connectionData;
+    }
+
+    public OverrideVoiceAudioDataModel(audioData: VoiceAudioDataModel): void {
         this.AudioData = audioData;
     }
 
@@ -54,7 +59,14 @@ export default class AudioManager {
         });
 
         this.TimeoutHandle = setTimeout((): void => {
-            this.RenewConnectionAndAudio();
+            this.DestroyConnection(false);
+            if (this.IsActive) {
+                this.CreateConnection(true);
+
+                if (this.IsAudioPlaying) {
+                    this.PlayAudioOnConnection();
+                }
+            }
         }, this.RenewInMs);
     }
 
@@ -83,7 +95,6 @@ export default class AudioManager {
         } else {
             throw new Error("Audio is not playing.");
         }
-
     }
 
     public PauseAudio(): void {
@@ -110,7 +121,7 @@ export default class AudioManager {
     }
 
     public DestroyConnection(resetValidationParameters: boolean = true): void {
-        this.CheckIfNull(this.VoiceConnection);
+        if (this.CheckIfNull(this.VoiceConnection)) return;
         this.VoiceConnection!.destroy();
 
         if (resetValidationParameters) {
@@ -120,43 +131,29 @@ export default class AudioManager {
     }
 
     public SetMaxListeners(maxListeners: number): void {
+        if (this.CheckIfNull(this.VoiceConnection)) return;
         this.VoiceConnection!.setMaxListeners(maxListeners);
     }
 
     public SetVolume(volumeInPercent: number): void {
-        if (volumeInPercent < 0 || volumeInPercent > 100) throw new Error("Volume must be between 0 and 100.");
-        this.CheckIfNull(this.VoiceConnection);
+        if (volumeInPercent < 0 || volumeInPercent > 100)
+            throw new Error("Volume must be between 0 and 100.");
+
+        if (this.CheckIfNull(this.VoiceConnection)) return;
+
         this.AudioResource!.volume!.setVolume(volumeInPercent / 100);
     }
 
     public Dispose(): void {
-        if (this.IsActive != undefined) {
-            this.DestroyConnection();
-            this.ConnectionData = undefined;
-            this.VoiceConnection = undefined;
-        }
-
-        if (this.IsAudioPlaying != undefined) {
-            this.AudioData = undefined;
-            this.AudioResource = undefined;
-            this.AudioPlayer = undefined;
-        }
-
-        if (this.TimeoutHandle) {
-            clearTimeout(this.TimeoutHandle);
-            this.TimeoutHandle = undefined;
-        }
-    }
-
-    private RenewConnectionAndAudio(): void {
-        this.DestroyConnection(false);
-        if (this.IsActive) {
-            this.CreateConnection(true);
-
-            if (this.IsAudioPlaying) {
-                this.PlayAudioOnConnection();
-            }
-        }
+        this.VoiceConnection = undefined;
+        this.AudioPlayer = undefined;
+        this.AudioResource = undefined;
+        this.IsActive = undefined;
+        this.IsAudioPlaying = undefined;
+        this.ConnectionData = undefined;
+        this.AudioData = undefined;
+        this.TimeoutHandle = undefined;
+        this.RenewInMs = undefined;
     }
 
     private CheckIfNull<T>(value: T | null): boolean {
