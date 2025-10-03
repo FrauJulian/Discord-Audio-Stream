@@ -1,6 +1,6 @@
 {
   "name": "discord-audio-stream",
-  "version": "0.6.13",
+  "version": "0.6.14",
   "license": "LGPL-2.1-only",
   "description": "NodeJS library to make stream any audio on discord easier.",
   "exports": {
