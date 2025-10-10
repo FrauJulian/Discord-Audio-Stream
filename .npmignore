@@ -3,8 +3,14 @@
 .github
 .gitignore
 .npmignore
+.husky
 node_modules
 src
 README.md
 tsconfig.json
 tsup.config.ts
+eslint.config.js
+.prettierrc
+.vscode
+eslint.config.typeaware.cjs
+tsconfig.eslint.json
