@@ -1,7 +1,7 @@
 import type { AudioPlayer, AudioResource, VoiceConnection } from '@discordjs/voice';
 import { createAudioPlayer, createAudioResource, joinVoiceChannel } from '@discordjs/voice';
 import { join } from 'node:path';
-import {VoiceAudioDataModel, VoiceConnectionDataModel} from "./types";
+import type { VoiceAudioDataModel, VoiceConnectionDataModel } from './types';
 
 export default class AudioManager {
   public VoiceConnection?: VoiceConnection;

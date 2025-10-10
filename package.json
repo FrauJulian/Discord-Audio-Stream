@@ -1,23 +1,23 @@
 {
   "name": "discord-audio-stream",
-  "version": "0.6.18",
+  "version": "0.6.19",
   "license": "LGPL-2.1-only",
   "description": "NodeJS library to make stream any audio on discord easier.",
   "exports": {
     ".": {
       "require": {
-        "types": "./dist/index.d.ts",
+        "types": "./dist/types.d.ts",
         "default": "./dist/index.js"
       },
       "import": {
-        "types": "./dist/index.d.mts",
+        "types": "./dist/types.d.mts",
         "default": "./dist/index.mjs"
       }
     }
   },
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/types.d.ts",
   "files": [
     "dist"
   ],
