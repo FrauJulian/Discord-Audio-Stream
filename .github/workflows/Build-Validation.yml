@@ -20,4 +20,4 @@ jobs:
         run: npm install
 
       - name: run Rollout Build
-        run: npm run rolloutBuild
+        run: npm run build

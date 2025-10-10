@@ -15,19 +15,25 @@ Please create an [issue](https://github.com/FrauJulian/DiscordAudioStreamNPM/iss
 
 ## 📝 Usage
 
-### Install package
+### Install
+
+> **Supported package managers:** npm, yarn, pnpm, bun
+
+#### Recommended:
 
 ```bash
-npm install discord-audio-stream
-yarn add discord-audio-stream
-pnpm add discord-audio-stream
-bun add discord-audio-stream
+npm install discord-audio-stream @snazzah/davey @discordjs/opus
+yarn add discord-audio-stream @snazzah/davey @discordjs/opus
+pnpm add discord-audio-stream @snazzah/davey @discordjs/opus
+bun add discord-audio-stream @snazzah/davey @discordjs/opus
 ```
+
+You need `@snazzah/davey` and one of the encryption libraries to run this package!
 
 **Encryption Libraries (npm install):**
 
 > You only need to install one of these libraries if your system does not support `aes-256-gcm` (verify by running
-`require('node:crypto').getCiphers().includes('aes-256-gcm')`).
+> `require('node:crypto').getCiphers().includes('aes-256-gcm')`).
 
 - `sodium-native`
 - `sodium`
@@ -54,15 +60,17 @@ let audioManager = new AudioManager();
 or (with parameters)
 
 ```js
-let audioManager = new AudioManager({
-        VoiceChannelId: 0, //voice channel id where to play music
-        GuildId: 0, //guild id
-        VoiceAdapter: 0 //guild VoiceAdapter
-    },
-    {
-        ResourceType: "", //resource type like link or file
-        Resource: "" //auto play link or file name
-    });
+let audioManager = new AudioManager(
+  {
+    VoiceChannelId: 0, //voice channel id where to play music
+    GuildId: 0, //guild id
+    VoiceAdapter: 0, //guild VoiceAdapter
+  },
+  {
+    ResourceType: '', //resource type like link or file
+    Resource: '', //auto play link or file name
+  },
+);
 ```
 
 ### Properties of the AudioManager
@@ -70,7 +78,7 @@ let audioManager = new AudioManager({
 #### Properties
 
 | Callable with     | Type                         | Description                                     |
-|-------------------|------------------------------|-------------------------------------------------|
+| ----------------- | ---------------------------- | ----------------------------------------------- |
 | `VoiceConnection` | **VoiceConnection**          | VoiceConnection instance from discord.js/voice. |
 | `AudioPlayer`     | **AudioPlayer**              | AudioPlayer instance from discord.js/voice.     |
 | `AudioResource`   | **AudioResource**            | AudioResource instance from discord.js/voice.   |
@@ -79,42 +87,34 @@ let audioManager = new AudioManager({
 
 #### Methods
 
-| Callable with                  | Parameters                                              | Return type | Description                                                   |
-|--------------------------------|---------------------------------------------------------|-------------|---------------------------------------------------------------|
-| `OverrideVoiceConnectionData`  | `connectionData` (type of **VoiceConnectionDataModel**) | void        | Method to override global connectionData variable.            |
-| `OverrideVoiceAudioDataModel`  | `audioData` (type of **VoiceAudioDataModel**)           | void        | Method to override global audioData variable.                 |
-| `OverrideRenewInMs`            | `renewInMs` (type of int, default value is 5400000)     | void        | Method to override global renewInMs variable.                 |
-| `CreateConnection`             | `isRenew` (type of boolean, default value is false)     | void        | Method to join the voice connection.                          |
-| `PlayAudioOnConnection`        |                                                         | void        | Method to play audio on the existing voice connection.        |
-| `PauseAudio`                   |                                                         | void        | Method to pause the audio.                                    |
-| `ResumeAudio`                  |                                                         | void        | Method to resume the audio.                                   |
-| `StopAudioOnConnection`        |                                                         | void        | Method to stop the audio without destroying voice connection. |
-| `CreateConnectionAndPlayAudio` |                                                         | void        | Method to join the voice connection and play audio.           |
-| `DestroyConnection`            |                                                         | void        | Method to destroy the voice connection.                       |
-| `Dispose`                      |                                                         | void        | Dispose all data in object.                                   |
-| `SetVolume`                    | `volume` (type of number, 0 - 100 percent)              | void        | Method to set the audio volume.                               | Method to set the volume of the audio.                             |
-| `SetMaxListeners`              | `maxListeners` (type of number)                         | void        | Method to set the max listeners of the audio stream.          |
+| Callable with                  | Parameters                                              | Return type | Description                                                   |                                        |
+| ------------------------------ | ------------------------------------------------------- | ----------- | ------------------------------------------------------------- | -------------------------------------- |
+| `OverrideVoiceConnectionData`  | `connectionData` (type of **VoiceConnectionDataModel**) | void        | Method to override global connectionData variable.            |                                        |
+| `OverrideVoiceAudioDataModel`  | `audioData` (type of **VoiceAudioDataModel**)           | void        | Method to override global audioData variable.                 |                                        |
+| `OverrideRenewInMs`            | `renewInMs` (type of int, default value is 5400000)     | void        | Method to override global renewInMs variable.                 |                                        |
+| `CreateConnection`             | `isRenew` (type of boolean, default value is false)     | void        | Method to join the voice connection.                          |                                        |
+| `PlayAudioOnConnection`        |                                                         | void        | Method to play audio on the existing voice connection.        |                                        |
+| `PauseAudio`                   |                                                         | void        | Method to pause the audio.                                    |                                        |
+| `ResumeAudio`                  |                                                         | void        | Method to resume the audio.                                   |                                        |
+| `StopAudioOnConnection`        |                                                         | void        | Method to stop the audio without destroying voice connection. |                                        |
+| `CreateConnectionAndPlayAudio` |                                                         | void        | Method to join the voice connection and play audio.           |                                        |
+| `DestroyConnection`            |                                                         | void        | Method to destroy the voice connection.                       |                                        |
+| `Dispose`                      |                                                         | void        | Dispose all data in object.                                   |                                        |
+| `SetVolume`                    | `volume` (type of number, 0 - 100 percent)              | void        | Method to set the audio volume.                               | Method to set the volume of the audio. |
+| `SetMaxListeners`              | `maxListeners` (type of number)                         | void        | Method to set the max listeners of the audio stream.          |                                        |
 
 ##### Types History
 
-- [**VoiceConnection
-  ** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/VoiceConnection.ts#L166)
-- [**AudioPlayer
-  ** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/audio/AudioPlayer.ts#L155)
-- [**AudioResource
-  ** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/audio/AudioResource.ts#L44)
-- [**VoiceConnectionDataModel
-  **](https://github.com/FrauJulian/Discord-Audio-Stream/blob/main/src/Models/VoiceConnectionDataModel.d.ts#L3) (custom
-  type)
-- [**VoiceAudioDataModel
-  **](https://github.com/FrauJulian/Discord-Audio-Stream/blob/main/src/Models/VoiceAudioDataModel.d.ts#L1) (custom type)
+- [**VoiceConnection** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/VoiceConnection.ts#L166)
+- [**AudioPlayer** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/audio/AudioPlayer.ts#L155)
+- [**AudioResource** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/audio/AudioResource.ts#L44)
+- [**VoiceConnectionDataModel** by discord-audio-stream](https://github.com/FrauJulian/Discord-Audio-Stream/blob/main/src/Models/VoiceConnectionDataModel.d.ts#L3)
+- [**VoiceAudioDataModel** by discord-audio-stream](https://github.com/FrauJulian/Discord-Audio-Stream/blob/main/src/Models/VoiceAudioDataModel.d.ts#L1)
 
-## 📋 Credits:
+## 📋 Contributors:
 
-~ [**FrauJulian**](https://fraujulian.xyz/).
+~ [**FrauJulian - Julian Lechner**](https://fraujulian.xyz/).
 
 ## 🤝 Enjoy the package?
 
 Give it a star ⭐ on [github](https://github.com/FrauJulian/discord-audio-stream)!
-
-### Greetings from Austria! ⛰️
