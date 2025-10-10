@@ -17,14 +17,15 @@ Please create an [issue](https://github.com/FrauJulian/DiscordAudioStreamNPM/iss
 
 ### Install
 
-> #### NPM, yarn, pnpm and bun are supported.
->
-> ```bash
-> npm install discord-audio-stream @snazzah/davey @discordjs/opus
-> yarn add discord-audio-stream @snazzah/davey @discordjs/opus
-> pnpm add discord-audio-stream @snazzah/davey @discordjs/opus
-> bun add discord-audio-stream @snazzah/davey @discordjs/opus
-> ```
+> **Supported package managers:** npm, yarn, pnpm, bun
+
+#### Recommended:
+```bash
+npm install discord-audio-stream @snazzah/davey @discordjs/opus
+yarn add discord-audio-stream @snazzah/davey @discordjs/opus
+pnpm add discord-audio-stream @snazzah/davey @discordjs/opus
+bun add discord-audio-stream @snazzah/davey @discordjs/opus
+```
 
 You need `@snazzah/davey` and one of the encryption libraries to run this package!
 
