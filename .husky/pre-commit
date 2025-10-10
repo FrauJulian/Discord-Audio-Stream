@@ -1,3 +1,4 @@
 #!/usr/bin/env sh
 npm run format || exit 1
 npm run lint:fix || exit 1
+npm run build || exit 1
