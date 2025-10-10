@@ -61,15 +61,15 @@ or (with parameters)
 
 ```js
 let audioManager = new AudioManager(
-    {
-        VoiceChannelId: 0, //voice channel id where to play music
-        GuildId: 0, //guild id
-        VoiceAdapter: 0, //guild VoiceAdapter
-    },
-    {
-        ResourceType: '', //resource type like link or file
-        Resource: '', //auto play link or file name
-    },
+  {
+    VoiceChannelId: 0, //voice channel id where to play music
+    GuildId: 0, //guild id
+    VoiceAdapter: 0, //guild VoiceAdapter
+  },
+  {
+    ResourceType: '', //resource type like link or file
+    Resource: '', //auto play link or file name
+  },
 );
 ```
 
@@ -78,7 +78,7 @@ let audioManager = new AudioManager(
 #### Properties
 
 | Callable with     | Type                         | Description                                     |
-|-------------------|------------------------------|-------------------------------------------------|
+| ----------------- | ---------------------------- | ----------------------------------------------- |
 | `VoiceConnection` | **VoiceConnection**          | VoiceConnection instance from discord.js/voice. |
 | `AudioPlayer`     | **AudioPlayer**              | AudioPlayer instance from discord.js/voice.     |
 | `AudioResource`   | **AudioResource**            | AudioResource instance from discord.js/voice.   |
@@ -88,7 +88,7 @@ let audioManager = new AudioManager(
 #### Methods
 
 | Callable with                  | Parameters                                              | Return type | Description                                                   |                                        |
-|--------------------------------|---------------------------------------------------------|-------------|---------------------------------------------------------------|----------------------------------------|
+| ------------------------------ | ------------------------------------------------------- | ----------- | ------------------------------------------------------------- | -------------------------------------- |
 | `OverrideVoiceConnectionData`  | `connectionData` (type of **VoiceConnectionDataModel**) | void        | Method to override global connectionData variable.            |                                        |
 | `OverrideVoiceAudioDataModel`  | `audioData` (type of **VoiceAudioDataModel**)           | void        | Method to override global audioData variable.                 |                                        |
 | `OverrideRenewInMs`            | `renewInMs` (type of int, default value is 5400000)     | void        | Method to override global renewInMs variable.                 |                                        |
@@ -108,7 +108,7 @@ let audioManager = new AudioManager(
 - [**VoiceConnection** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/VoiceConnection.ts#L166)
 - [**AudioPlayer** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/audio/AudioPlayer.ts#L155)
 - [**AudioResource** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/audio/AudioResource.ts#L44)
-- [**VoiceConnectionDataModel** by discord-audio-stream](https://github.com/FrauJulian/Discord-Audio-Stream/blob/main/src/Models/VoiceConnectionDataModel.d.ts#L3) 
+- [**VoiceConnectionDataModel** by discord-audio-stream](https://github.com/FrauJulian/Discord-Audio-Stream/blob/main/src/Models/VoiceConnectionDataModel.d.ts#L3)
 - [**VoiceAudioDataModel** by discord-audio-stream](https://github.com/FrauJulian/Discord-Audio-Stream/blob/main/src/Models/VoiceAudioDataModel.d.ts#L1)
 
 ## 📋 Contributors:
