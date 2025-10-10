@@ -1,6 +1,6 @@
 {
   "name": "discord-audio-stream",
-  "version": "0.6.16",
+  "version": "0.6.17",
   "license": "LGPL-2.1-only",
   "description": "NodeJS library to make stream any audio on discord easier.",
   "exports": {
@@ -66,6 +66,7 @@
   "devDependencies": {
     "@types/ejs": "^3.1.5",
     "@types/node": "^24.7.1",
+    "del-cli": "^7.0.0",
     "eslint": "^9.37.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.4",
