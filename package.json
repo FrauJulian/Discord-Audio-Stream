@@ -1,6 +1,6 @@
 {
   "name": "discord-audio-stream",
-  "version": "0.6.13",
+  "version": "0.7.0",
   "license": "LGPL-2.1-only",
   "description": "NodeJS library to make stream any audio on discord easier.",
   "exports": {
@@ -25,11 +25,16 @@
     "lib": "src"
   },
   "scripts": {
-    "updateDependencies": "npx npm-check-updates --upgrade && npm install && echo SUCCEED UPDATE",
-    "cleanSolution": "del-cli dist && echo SUCCEED CLEAN",
-    "updateVersion": "npm version patch --no-git-tag-version && echo SUCCEED UPDATE VERSION",
-    "buildPackage": "tsup && echo SUCCEED BUILD && npm run updateVersion",
-    "rolloutBuild": "npm run updateDependencies && npm run cleanSolution && tsup"
+    "lint": "eslint . --ext .ts,.tsx,.js,.cjs,.mjs",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.cjs,.mjs --fix",
+    "lint:types": "eslint . --config eslint.config.typeaware.cjs --ext .ts,.tsx",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "update:dependencies": "npx npm-check-updates --upgrade && pnpm install && bun install && npm install && yarn install && echo PLEASE delete your node_modules directory and install again with your package manager.",
+    "update:version": "npm version patch --no-git-tag-version",
+    "clean:dist": "del-cli dist",
+    "build": "npm run clean:dist && npm run update:version && tsup",
+    "prepare": "husky"
   },
   "repository": "https://github.com/FrauJulian/Discord-Audio-Stream",
   "bugs": "https://github.com/FrauJulian/Discord-Audio-Stream/issues",
@@ -37,23 +42,41 @@
   "keywords": [
     "discordjs",
     "discord.js",
-    "discord",
+    "discordjs/voice",
     "audio",
-    "voice",
-    "stream"
+    "voice"
   ],
   "contributors": [
     "FrauJulian - Lechner Julian <fraujulian@lechner.top>"
   ],
+  "lint-staged": {
+    "*.{ts,tsx,js,cjs,mjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
   "dependencies": {
-    "@discordjs/voice": "^0.19.0"
+    "@discordjs/voice": "^0.19.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.0",
+    "@typescript-eslint/parser": "^8.46.0"
   },
   "devDependencies": {
     "@types/ejs": "^3.1.5",
-    "@types/node": "^24.6.2",
-    "del-cli": "^7.0.0",
+    "@types/node": "^24.7.1",
+    "eslint": "^9.37.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-n": "^17.23.1",
+    "eslint-plugin-promise": "^7.2.1",
+    "eslint-plugin-unused-imports": "^4.2.0",
+    "husky": "^9.1.7",
     "npm-check-updates": "^19.0.0",
-    "ts-jest": "^29.4.4",
+    "prettier": "^3.6.2",
+    "ts-jest": "^29.4.5",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3"
   },
