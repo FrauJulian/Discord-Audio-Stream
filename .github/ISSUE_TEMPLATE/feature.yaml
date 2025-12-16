@@ -1,0 +1,29 @@
+name: 💡 Enhancement
+description: Suggest a new feature or improvement
+title: '💡 [ENHANCEMENT]: '
+body:
+    - type: textarea
+      id: description
+      attributes:
+          label: Description
+          description: Describe the new feature or improvement!
+          placeholder: 'What problem does it solve or what value does it add?'
+      validations:
+          required: true
+
+    - type: textarea
+      id: proposal
+      attributes:
+          label: Proposed Solution
+          placeholder: 'Describe how the feature should work.'
+      validations:
+          required: false
+
+    - type: input
+      id: implementation
+      attributes:
+          label: Implementation Version
+          description: Specify in which version the enhancement should be released.
+          placeholder: 'v0.1'
+      validations:
+          required: true

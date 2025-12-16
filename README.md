@@ -4,9 +4,22 @@
 ![GitHub package.json version](https://img.shields.io/github/package-json/v/FrauJulian/discord-audio-stream)
 ![GitHub Repo stars](https://img.shields.io/github/stars/FrauJulian/discord-audio-stream?style=social)
 
-**This module is designed to work with [discord.js/voice](https://www.npmjs.com/package/@discordjs/voice) v0.18. This
+**This module is designed to work with [discord.js/voice](https://www.npmjs.com/package/@discordjs/voice) v0.19. This
 package doesn't support older
 versions!**
+
+> **Designed for 24/7 audio playing on discord.**  
+> Discord has many unwanted rate limits, especially in the audio area. This package does all the work and ensures that
+> your music never stops playing due to ffmpeg or Discord, with as little effort as possible.
+
+> **Recommended best Practise:**  
+> Create a global Map<GuildId, AudioManager> (Map<KEY, OBJ>) list. When the feature is used on a guild, add a new
+> instance of AudioManager to the Map. When starting the connection or audio, overwrite the respective configuration with
+> the override methods provided. To finally start, use the respective method. For each call and each change, retrieve the
+> AudioManager object from the list and perform your actions. When the feature get stopped, first execute StopConnection
+> and then Dispose to save as much power as possible. Garbage collection does the rest.  
+> **For large systems:** For large systems, it is recommended to queue each start with the
+> packet [p-queue](https://www.npmjs.com/package/p-queue), to give ffmpeg enough time..
 
 ## 👋 Support
 
@@ -15,105 +28,101 @@ Please create an [issue](https://github.com/FrauJulian/DiscordAudioStreamNPM/iss
 
 ## 📝 Usage
 
-### Install
+### Installation
 
-> **Supported package managers:** npm, yarn, pnpm, bun
-
-#### Recommended:
+**Node.js 22.12.0 or newer is required.**
 
 ```bash
-npm install discord-audio-stream @snazzah/davey @discordjs/opus
-yarn add discord-audio-stream @snazzah/davey @discordjs/opus
-pnpm add discord-audio-stream @snazzah/davey @discordjs/opus
-bun add discord-audio-stream @snazzah/davey @discordjs/opus
+npm install discord-audio-stream
+yarn add discord-audio-stream
+pnpm add discord-audio-stream
+bun add discord-audio-stream
 ```
 
-You need `@snazzah/davey` and one of the encryption libraries to run this package!
+#### Required Dependencies
 
-**Encryption Libraries (npm install):**
-
-> You only need to install one of these libraries if your system does not support `aes-256-gcm` (verify by running
-> `require('node:crypto').getCiphers().includes('aes-256-gcm')`).
-
-- `sodium-native`
-- `sodium`
-- `@stablelib/xchacha20poly1305`
-- `@noble/ciphers`
-- `libsodium-wrappers`
-
-**Opus Libraries (npm install):**
-
-- `@discordjs/opus`
+- > You only need to install `libsodium-wrappers` if your system does not support `aes-256-gcm` (verify by running
+  > `require('node:crypto').getCiphers().includes('aes-256-gcm')`).
+- `@snazzah/davey`
 - `opusscript`
+- `prism-media`
+- **FFmpeg** (one of those)
+    - [`FFmpeg`](https://ffmpeg.org/) (installed and added to environment)
+    - `ffmpeg-static`
 
-**FFmpeg:**
+### AudioManager Instance
 
-- [`FFmpeg`](https://ffmpeg.org/) (installed and added to environment)
-- `ffmpeg-static`
+#### Options
 
-### Create Instance
+**Declaration:**
 
-```js
-let audioManager = new AudioManager();
+```
+AudioManager(ffmpegMode: string, renewInMs, number, connectionData: VoiceConnectionDataModel, audioData: VoiceAudioDataModel): IDisposable, IAudioManager
 ```
 
-or (with parameters)
+- `ffmpegMode`: 'Native' or 'Standalone'
+    - Native: [`FFmpeg`](https://ffmpeg.org/) installed on your system
+    - Standalone: FFmpeg-static as NodeJs library
+- `renewInMs`: renewal time > default is 1,5h (5400000ms)
+- `connectionData`: Options for voice connection. (type of **VoiceConnectionDataModel**)
+- `audioData`: Options for audio player. (type of **VoiceAudioDataModel**)
+
+#### Example
 
 ```js
 let audioManager = new AudioManager(
-  {
-    VoiceChannelId: 0, //voice channel id where to play music
-    GuildId: 0, //guild id
-    VoiceAdapter: 0, //guild VoiceAdapter
-  },
-  {
-    ResourceType: '', //resource type like link or file
-    Resource: '', //auto play link or file name
-  },
+    'Native',
+    5400000,
+    {
+        VoiceChannelId: 0, //voice channel id where to play music
+        GuildId: 0, //guild id
+        VoiceAdapter: 0, //guild VoiceAdapter
+    },
+    {
+        ResourceType: '', //resource type like link or file
+        Resource: '', //auto play link or file name
+    },
 );
 ```
 
-### Properties of the AudioManager
+### Fields and Methods of AudioManager
 
-#### Properties
+#### Fields
 
-| Callable with     | Type                         | Description                                     |
-| ----------------- | ---------------------------- | ----------------------------------------------- |
-| `VoiceConnection` | **VoiceConnection**          | VoiceConnection instance from discord.js/voice. |
-| `AudioPlayer`     | **AudioPlayer**              | AudioPlayer instance from discord.js/voice.     |
-| `AudioResource`   | **AudioResource**            | AudioResource instance from discord.js/voice.   |
-| `ConnectionData`  | **VoiceConnectionDataModel** | Global variable for connection data.            |
-| `AudioData`       | **AudioDataModel**           | Global variable for audio data.                 |
+| Name      | Type     | Security  | Description                           |
+| --------- | -------- | --------- | ------------------------------------- |
+| `Active`  | **bool** | protected | To check if the connection is active. |
+| `Playing` | **bool** | protected | To check if it is playing audio.      |
 
 #### Methods
 
-| Callable with                  | Parameters                                              | Return type | Description                                                   |                                        |
-| ------------------------------ | ------------------------------------------------------- | ----------- | ------------------------------------------------------------- | -------------------------------------- |
-| `OverrideVoiceConnectionData`  | `connectionData` (type of **VoiceConnectionDataModel**) | void        | Method to override global connectionData variable.            |                                        |
-| `OverrideVoiceAudioDataModel`  | `audioData` (type of **VoiceAudioDataModel**)           | void        | Method to override global audioData variable.                 |                                        |
-| `OverrideRenewInMs`            | `renewInMs` (type of int, default value is 5400000)     | void        | Method to override global renewInMs variable.                 |                                        |
-| `CreateConnection`             | `isRenew` (type of boolean, default value is false)     | void        | Method to join the voice connection.                          |                                        |
-| `PlayAudioOnConnection`        |                                                         | void        | Method to play audio on the existing voice connection.        |                                        |
-| `PauseAudio`                   |                                                         | void        | Method to pause the audio.                                    |                                        |
-| `ResumeAudio`                  |                                                         | void        | Method to resume the audio.                                   |                                        |
-| `StopAudioOnConnection`        |                                                         | void        | Method to stop the audio without destroying voice connection. |                                        |
-| `CreateConnectionAndPlayAudio` |                                                         | void        | Method to join the voice connection and play audio.           |                                        |
-| `DestroyConnection`            |                                                         | void        | Method to destroy the voice connection.                       |                                        |
-| `Dispose`                      |                                                         | void        | Dispose all data in object.                                   |                                        |
-| `SetVolume`                    | `volume` (type of number, 0 - 100 percent)              | void        | Method to set the audio volume.                               | Method to set the volume of the audio. |
-| `SetMaxListeners`              | `maxListeners` (type of number)                         | void        | Method to set the max listeners of the audio stream.          |                                        |
+| Name                          | Parameters                                              | Return type   | Description                              |
+| ----------------------------- | ------------------------------------------------------- | ------------- | ---------------------------------------- |
+| `OverrideVoiceConnectionData` | `connectionData` (type of **VoiceConnectionDataModel**) | void          | To override intern connectionData field. |
+| `OverrideVoiceAudioDataModel` | `audioData` (type of **VoiceAudioDataModel**)           | void          | To override intern audioData field.      |
+| `CreateAndPlay`               |                                                         | Promise<void> | Join channel and start playing audio.    |
+| `CreateConnection`            |                                                         | void          | Let it connect to voice channel.         |
+| `PlayAudio`                   |                                                         | Promise<void> | To start playing audio.                  |
+| `PauseAudio`                  |                                                         | void          | Pause the audio, if it is playing        |
+| `ResumeAudio`                 |                                                         | void          | Resume the audio, if it is paused.       |
+| `SetVolume`                   | `volume` (type of number, 0 - 100 percent)              | void          | To set the audio volume.                 |
+| `StopConnection`              |                                                         | Promise<void> | Method to disconnect the voice channel.  |
+| `Dispose`                     |                                                         | void          | Dispose all data in object.              |
 
-##### Types History
+## 📝 Types
 
 - [**VoiceConnection** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/VoiceConnection.ts#L166)
 - [**AudioPlayer** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/audio/AudioPlayer.ts#L155)
 - [**AudioResource** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/audio/AudioResource.ts#L44)
-- [**VoiceConnectionDataModel** by discord-audio-stream](https://github.com/FrauJulian/Discord-Audio-Stream/blob/main/src/Models/VoiceConnectionDataModel.d.ts#L3)
-- [**VoiceAudioDataModel** by discord-audio-stream](https://github.com/FrauJulian/Discord-Audio-Stream/blob/main/src/Models/VoiceAudioDataModel.d.ts#L1)
+- [**DiscordGatewayAdapterCreator** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/util/adapter.ts#L50)
+- [**VoiceConnectionDataModel** by discord-audio-stream](https://github.com/FrauJulian/Discord-Audio-Stream/blob/master/src/types.d.ts#L3)
+- [**VoiceAudioDataModel** by discord-audio-stream](https://github.com/FrauJulian/Discord-Audio-Stream/blob/master/src/types.d.ts#L21)
+- [**IDisposable** by discord-audio-stream](https://github.com/FrauJulian/Discord-Audio-Stream/blob/master/src/types.d.ts#L38)
+- [**IAudioManager** by discord-audio-stream](https://github.com/FrauJulian/Discord-Audio-Stream/blob/master/src/types.d.ts#L45)
 
 ## 📋 Contributors:
 
-~ [**FrauJulian - Julian Lechner**](https://fraujulian.xyz/).
+~ [**FrauJulian - Julian Lechner**](https://fraujulian.xyz/) - CODEOWNER
 
 ## 🤝 Enjoy the package?
 

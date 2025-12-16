@@ -1,0 +1,9 @@
+*.ts text eol=crlf linguist-language=TypeScript
+*.tsx text eol=crlf linguist-language=TypeScript
+*.mts text eol=crlf linguist-language=TypeScript
+*.cts text eol=crlf linguist-language=TypeScript
+
+*.js text eol=crlf linguist-language=JavaScript
+*.jsx text eol=crlf linguist-language=JavaScript
+*.mjs text eol=crlf linguist-language=JavaScript
+*.cjs text eol=crlf linguist-language=JavaScript

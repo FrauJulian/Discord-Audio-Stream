@@ -1,39 +1,39 @@
-name: Build Rollout
+name: Release and Deploy Build
 
 on:
-  workflow_dispatch:
+    workflow_dispatch:
 
 permissions:
-  id-token: write
-  contents: read
+    id-token: write
+    contents: read
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+    build:
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v4
 
-      - name: use NodeJS v22.12.0
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.12.0'
-          registry-url: 'https://registry.npmjs.org'
-          always-auth: true
+            - name: use NodeJS v22.12.0
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22.12.0'
+                  registry-url: 'https://registry.npmjs.org'
+                  always-auth: true
 
-      - name: Create .npmrc
-        run: echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > ~/.npmrc
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+            - name: Create .npmrc
+              run: echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > ~/.npmrc
+              env:
+                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Install Dependencies
-        run: npm install
+            - name: Install Dependencies
+              run: npm install
 
-      - name: run Rollout Build
-        run: npm run build
+            - name: run Rollout Build
+              run: npm run build
 
-      - name: Publish Library
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+            - name: Publish Library
+              run: npm publish
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
