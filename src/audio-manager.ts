@@ -1,159 +1,197 @@
 import type { AudioPlayer, AudioResource, VoiceConnection } from '@discordjs/voice';
-import { createAudioPlayer, createAudioResource, joinVoiceChannel } from '@discordjs/voice';
+import {
+    createAudioPlayer,
+    createAudioResource,
+    entersState,
+    joinVoiceChannel,
+    NoSubscriberBehavior,
+    StreamType,
+    VoiceConnectionStatus,
+} from '@discordjs/voice';
 import { join } from 'node:path';
-import type { VoiceAudioDataModel, VoiceConnectionDataModel } from './types';
+import type { IAudioManager, IDisposable, VoiceAudioDataModel, VoiceConnectionDataModel } from './types';
+import { spawn } from 'node:child_process';
+import type { Readable } from 'node:stream';
 
-export default class AudioManager {
-  public VoiceConnection?: VoiceConnection;
-  public AudioPlayer?: AudioPlayer;
-  public AudioResource?: AudioResource;
+export default class AudioManager implements IAudioManager, IDisposable {
+    private voiceConnection?: VoiceConnection | null;
+    private audioPlayer?: AudioPlayer | null;
+    private audioResource?: AudioResource | null;
 
-  protected IsActive?: boolean;
-  protected IsAudioPlaying?: boolean;
+    protected Active?: boolean | null;
+    protected Playing?: boolean | null;
 
-  protected ConnectionData?: VoiceConnectionDataModel;
-  protected AudioData?: VoiceAudioDataModel;
+    private timeout?: NodeJS.Timeout | null;
+    private ffmpegProcess?: ReturnType<typeof spawn> | null;
+    private pcmStream?: Readable | null;
 
-  private TimeoutHandle?: NodeJS.Timeout;
-  private RenewInMs?: number;
-
-  constructor(connectionData?: VoiceConnectionDataModel, audioData?: VoiceAudioDataModel, renewInMs = 5400000) {
-    this.RenewInMs = renewInMs;
-    this.ConnectionData = connectionData;
-    this.AudioData = audioData;
-  }
-
-  public OverrideRenewInMs(renewInMs: number = 5400000): void {
-    this.RenewInMs = renewInMs;
-  }
-
-  public OverrideVoiceConnectionData(connectionData: VoiceConnectionDataModel): void {
-    this.ConnectionData = connectionData;
-  }
-
-  public OverrideVoiceAudioDataModel(audioData: VoiceAudioDataModel): void {
-    this.AudioData = audioData;
-  }
-
-  public CreateConnection(isRenew: boolean = false): void {
-    this.CheckIfNull(this.ConnectionData);
-
-    if (!isRenew) {
-      if (this.IsActive) {
-        this.DestroyConnection(false);
-      } else {
-        this.IsActive = true;
-      }
+    constructor(
+        private readonly ffmpegMode: 'Native' | 'Standalone',
+        private renewMs: number | null = null,
+        private connectionData: VoiceConnectionDataModel | null = null,
+        private audioData: VoiceAudioDataModel | null = null,
+    ) {
+        this.renewMs = renewMs ? renewMs : 5400000;
     }
 
-    this.VoiceConnection = joinVoiceChannel({
-      channelId: this.ConnectionData!.VoiceChannelId.toString(),
-      guildId: this.ConnectionData!.GuildId.toString(),
-      adapterCreator: this.ConnectionData!.VoiceAdapter,
-    });
+    public OverrideVoiceConnectionData(connectionData: VoiceConnectionDataModel): void {
+        this.connectionData = connectionData;
+    }
 
-    this.TimeoutHandle = setTimeout((): void => {
-      this.DestroyConnection(false);
-      if (this.IsActive) {
-        this.CreateConnection(true);
+    public OverrideVoiceAudioDataModel(audioData: VoiceAudioDataModel): void {
+        this.audioData = audioData;
+    }
 
-        if (this.IsAudioPlaying) {
-          this.PlayAudioOnConnection();
+    public CreateConnection(): void {
+        this.voiceConnection = joinVoiceChannel({
+            channelId: this.connectionData!.VoiceChannelId,
+            guildId: this.connectionData!.GuildId,
+            adapterCreator: this.connectionData!.VoiceAdapter,
+        });
+
+        this.timeout = setTimeout(async (): Promise<void> => {
+            await this.StopConnection();
+            await this.CreateAndPlay();
+        }, this.renewMs!);
+    }
+
+    public async PlayAudio(): Promise<void> {
+        if (!this.audioData || !this.voiceConnection) return;
+
+        await entersState(this.voiceConnection!, VoiceConnectionStatus.Ready, 20_000);
+
+        if (this.ffmpegProcess) {
+            this.ffmpegProcess.kill('SIGKILL');
+            this.ffmpegProcess = null;
         }
-      }
-    }, this.RenewInMs);
-  }
 
-  public PlayAudioOnConnection(): void {
-    this.CheckIfNull(this.AudioData);
+        let source: string;
 
-    if (this.AudioData!.ResourceType === 'File') {
-      this.AudioResource = createAudioResource(join(__dirname, this.AudioData!.Resource), { inlineVolume: true });
-    } else if (this.AudioData!.ResourceType === 'Link') {
-      this.AudioResource = createAudioResource(this.AudioData!.Resource, { inlineVolume: true });
-    } else {
-      throw new Error('Invalid resource type.');
+        if (this.audioData!.ResourceType === 'File') {
+            source = join(__dirname, this.audioData!.Resource);
+        } else if (this.audioData!.ResourceType === 'Link') {
+            source = this.audioData!.Resource;
+        } else {
+            throw new TypeError('Invalid resource type.');
+        }
+
+        this.ffmpegProcess = spawn(
+            this.ffmpegMode === 'Native' ? 'ffmpeg' : require('ffmpeg-static'),
+            [
+                '-loglevel',
+                'error',
+                '-i',
+                source,
+                '-analyzeduration',
+                '0',
+                '-f',
+                's16le',
+                '-ar',
+                '48000',
+                '-ac',
+                '2',
+                'pipe:1',
+            ],
+            {
+                stdio: ['ignore', 'pipe', 'pipe'],
+            },
+        );
+
+        this.pcmStream = this.ffmpegProcess!.stdout as Readable;
+
+        this.audioResource = createAudioResource(this.pcmStream, {
+            inputType: StreamType.Raw,
+            inlineVolume: true,
+        });
+
+        this.audioPlayer = createAudioPlayer({
+            behaviors: {
+                noSubscriber: NoSubscriberBehavior.Play,
+            },
+        });
+
+        this.voiceConnection!.subscribe(this.audioPlayer);
+
+        this.audioPlayer.play(this.audioResource);
+        this.Playing = true;
     }
 
-    this.AudioPlayer = createAudioPlayer();
-    this.AudioPlayer.play(this.AudioResource);
-
-    this.VoiceConnection!.subscribe(this.AudioPlayer!);
-    this.IsAudioPlaying = true;
-  }
-
-  public StopAudioOnConnection(): void {
-    if (this.IsAudioPlaying) {
-      this.DestroyConnection(false);
-      this.CreateConnection();
-    } else {
-      throw new Error('Audio is not playing.');
-    }
-  }
-
-  public PauseAudio(): void {
-    if (this.IsAudioPlaying) {
-      this.AudioPlayer!.pause();
-      this.IsAudioPlaying = false;
-    } else {
-      throw new TypeError('Audio is not playing.');
-    }
-  }
-
-  public ResumeAudio(): void {
-    if (!this.IsAudioPlaying) {
-      this.AudioPlayer!.unpause();
-      this.IsAudioPlaying = true;
-    } else {
-      throw new TypeError('Audio is playing.');
-    }
-  }
-
-  public CreateConnectionAndPlayAudio(): void {
-    this.CreateConnection();
-    this.PlayAudioOnConnection();
-  }
-
-  public DestroyConnection(resetValidationParameters: boolean = true): void {
-    if (this.CheckIfNull(this.VoiceConnection)) return;
-    this.VoiceConnection!.destroy();
-
-    if (resetValidationParameters) {
-      this.IsActive = false;
-      this.IsAudioPlaying = false;
-    }
-  }
-
-  public SetMaxListeners(maxListeners: number): void {
-    if (this.CheckIfNull(this.VoiceConnection)) return;
-    this.VoiceConnection!.setMaxListeners(maxListeners);
-  }
-
-  public SetVolume(volumeInPercent: number): void {
-    if (volumeInPercent < 0 || volumeInPercent > 100) throw new Error('Volume must be between 0 and 100.');
-
-    if (this.CheckIfNull(this.VoiceConnection)) return;
-
-    this.AudioResource!.volume!.setVolume(volumeInPercent / 100);
-  }
-
-  public Dispose(): void {
-    this.VoiceConnection = undefined;
-    this.AudioPlayer = undefined;
-    this.AudioResource = undefined;
-    this.IsActive = undefined;
-    this.IsAudioPlaying = undefined;
-    this.ConnectionData = undefined;
-    this.AudioData = undefined;
-    this.TimeoutHandle = undefined;
-    this.RenewInMs = undefined;
-  }
-
-  private CheckIfNull<T>(value: T | null): boolean {
-    if (value === null) {
-      throw new Error(`${value} cannot be null in this case.`);
+    public PauseAudio(): void {
+        if (this.Playing) {
+            this.audioPlayer!.pause();
+            this.Playing = false;
+        } else {
+            throw new ReferenceError('Audio is not playing.');
+        }
     }
 
-    return true;
-  }
+    public ResumeAudio(): void {
+        if (!this.Playing) {
+            this.audioPlayer!.unpause();
+            this.Playing = true;
+        } else {
+            throw new ReferenceError('Audio is playing.');
+        }
+    }
+
+    public async CreateAndPlay(): Promise<void> {
+        this.CreateConnection();
+        await this.PlayAudio();
+    }
+
+    public async StopConnection(): Promise<void> {
+        this.voiceConnection?.disconnect();
+        this.voiceConnection?.destroy();
+        this.voiceConnection = null;
+
+        this.Active = false;
+        this.Playing = false;
+    }
+
+    public SetVolume(volumeInPercent: number): void {
+        if (volumeInPercent < 0 || volumeInPercent > 100) throw new Error('Volume must be between 0 and 100.');
+        this.audioResource!.volume!.setVolume(volumeInPercent / 100);
+    }
+
+    public Dispose(): void {
+        try {
+            if (this.timeout) {
+                clearTimeout(this.timeout);
+            }
+
+            if (this.audioPlayer) {
+                this.audioPlayer.stop(true);
+            }
+
+            if (this.audioPlayer) {
+                this.audioPlayer!.stop();
+
+                if (this.audioResource && this.audioResource.playStream) {
+                    this.audioResource!.playStream.destroy();
+                }
+            }
+
+            if (this.voiceConnection) {
+                this.voiceConnection!.destroy();
+            }
+
+            if (this.ffmpegProcess) {
+                this.ffmpegProcess.kill('SIGKILL');
+                this.ffmpegProcess = null;
+            }
+
+            this.pcmStream?.destroy();
+            this.pcmStream = null;
+
+            this.audioPlayer = null;
+            this.audioResource = null;
+            this.voiceConnection = null;
+            this.timeout = null;
+            this.Active = null;
+            this.Playing = null;
+            this.connectionData = null;
+            this.audioData = null;
+            this.renewMs = null;
+        } catch {}
+    }
 }

@@ -1,0 +1,39 @@
+name: ⚙️ Improvement
+description: Suggest an improvement to existing functionality, code quality, or performance
+title: '⚙️ [Improvement]: '
+body:
+    - type: textarea
+      id: context
+      attributes:
+          label: Current Situation / Context
+          description: Describe the current behavior or implementation that could be improved.
+          placeholder: 'Currently, the system loads all users at once, which slows down response time.'
+      validations:
+          required: false
+
+    - type: textarea
+      id: proposal
+      attributes:
+          label: Proposed Improvement
+          description: Describe your proposed change or improvement in detail.
+          placeholder: 'Implement pagination for user loading to reduce memory usage and response time.'
+      validations:
+          required: false
+
+    - type: textarea
+      id: benefits
+      attributes:
+          label: Expected Benefits
+          description: Explain how this improvement will help (e.g., better performance, cleaner code, easier maintenance).
+          placeholder: 'Faster load times, improved scalability, and reduced database load.'
+      validations:
+          required: false
+
+    - type: input
+      id: implementation
+      attributes:
+          label: Implementation Version
+          description: Specify in which version the improvement should be released.
+          placeholder: 'v0.1'
+      validations:
+          required: true

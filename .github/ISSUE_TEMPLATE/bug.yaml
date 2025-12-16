@@ -1,0 +1,42 @@
+name: 🐛 Bug Report
+description: Report a bug or unexpected behavior
+title: '🐛 [BUG]: '
+body:
+    - type: textarea
+      id: information
+      attributes:
+          label: Information
+          description: Provide all information about the issue.
+          placeholder: 'What happened? What did you expect to happen?'
+      validations:
+          required: false
+
+    - type: textarea
+      id: steps
+      attributes:
+          label: Steps to Reproduce
+          description: Step-by-step instructions to reproduce the issue.
+          placeholder: |
+              1. Go to ...
+              2. Click on ...
+              3. Observe ...
+      validations:
+          required: false
+
+    - type: textarea
+      id: logs
+      attributes:
+          label: Logs or Error Messages
+          description: Paste any relevant console output, stack traces, or screenshots.
+          placeholder: 'Console output, stacktrace, or screenshots here'
+      validations:
+          required: false
+
+    - type: input
+      id: occurrence
+      attributes:
+          label: Occurrence Version
+          description: Specify in which version the issue occurred
+          placeholder: 'v0.1.TTMMJJ-hhmm'
+      validations:
+          required: true
