@@ -18,7 +18,7 @@ versions!**
 > the override methods provided. To finally start, use the respective method. For each call and each change, retrieve the
 > AudioManager object from the list and perform your actions. When the feature get stopped, first execute StopConnection
 > and then Dispose to save as much power as possible. Garbage collection does the rest.  
-> **For large systems:** For large systems, it is recommended to queue each start with the
+> **For large features:** For large systems, it is recommended to queue each start with the
 > packet [p-queue](https://www.npmjs.com/package/p-queue), to give ffmpeg enough time..
 
 ## 👋 Support
@@ -41,31 +41,29 @@ bun add discord-audio-stream
 
 #### Required Dependencies
 
-- > You only need to install `libsodium-wrappers` if your system does not support `aes-256-gcm` (verify by running
-  > `require('node:crypto').getCiphers().includes('aes-256-gcm')`).
-- `@snazzah/davey`
-- `opusscript`
-- `prism-media`
+- > You only need to install [`libsodium-wrappers`](https://www.npmjs.com/package/libsodium-wrappers) if your system does not support `aes-256-gcm` (verify by running `require('node:crypto').getCiphers().includes('aes-256-gcm')`).
+- [`@snazzah/davey`](https://www.npmjs.com/package/@snazzah/davey)
+- [`opusscript`](https://www.npmjs.com/package/opusscript)
+- [`prism-media`](https://www.npmjs.com/package/prism-media)
+- [@discordjs/voice](https://www.npmjs.com/package/@discordjs/voice)
 - **FFmpeg** (one of those)
-    - [`FFmpeg`](https://ffmpeg.org/) (installed and added to environment)
-    - `ffmpeg-static`
+    - [`FFmpeg`](https://ffmpeg.org/) (environment) - *recommended*
+    - [`FFmpeg-static`](https://www.npmjs.com/package/ffmpeg-static) (library)
 
 ### AudioManager Instance
 
-#### Options
-
-**Declaration:**
+#### Constructor
 
 ```
 AudioManager(ffmpegMode: string, renewInMs, number, connectionData: VoiceConnectionDataModel, audioData: VoiceAudioDataModel): IDisposable, IAudioManager
 ```
 
 - `ffmpegMode`: 'Native' or 'Standalone'
-    - Native: [`FFmpeg`](https://ffmpeg.org/) installed on your system
-    - Standalone: FFmpeg-static as NodeJs library
-- `renewInMs`: renewal time > default is 1,5h (5400000ms)
-- `connectionData`: Options for voice connection. (type of **VoiceConnectionDataModel**)
-- `audioData`: Options for audio player. (type of **VoiceAudioDataModel**)
+    - Native: [`FFmpeg`](https://ffmpeg.org/) (environment)
+    - Standalone: [`FFmpeg-static`](https://www.npmjs.com/package/ffmpeg-static) (library)
+- `renewInMs`: renewal time, default 1,5h = 5400000ms  - optional
+- `connectionData`: options for voice connection - optional
+- `audioData`: options for audio player - optional
 
 #### Example
 
@@ -98,15 +96,15 @@ let audioManager = new AudioManager(
 
 | Name                          | Parameters                                              | Return type   | Description                              |
 | ----------------------------- | ------------------------------------------------------- | ------------- | ---------------------------------------- |
-| `OverrideVoiceConnectionData` | `connectionData` (type of **VoiceConnectionDataModel**) | void          | To override intern connectionData field. |
-| `OverrideVoiceAudioDataModel` | `audioData` (type of **VoiceAudioDataModel**)           | void          | To override intern audioData field.      |
-| `CreateAndPlay`               |                                                         | Promise<void> | Join channel and start playing audio.    |
+| `OverrideVoiceConnectionData` | `connectionData`: **VoiceConnectionDataModel**          | void          | To override intern connectionData field. |
+| `OverrideVoiceAudioDataModel` | `audioData`: **VoiceAudioDataModel**                    | void          | To override intern audioData field.      |
+| `CreateAndPlay`               |                                                         | Promise void  | Join channel and start playing audio.    |
 | `CreateConnection`            |                                                         | void          | Let it connect to voice channel.         |
-| `PlayAudio`                   |                                                         | Promise<void> | To start playing audio.                  |
+| `PlayAudio`                   |                                                         | Promise void  | To start playing audio.                  |
 | `PauseAudio`                  |                                                         | void          | Pause the audio, if it is playing        |
 | `ResumeAudio`                 |                                                         | void          | Resume the audio, if it is paused.       |
-| `SetVolume`                   | `volume` (type of number, 0 - 100 percent)              | void          | To set the audio volume.                 |
-| `StopConnection`              |                                                         | Promise<void> | Method to disconnect the voice channel.  |
+| `SetVolume`                   | `volume`: number (0 - 100 percent)                      | void          | To set the audio volume.                 |
+| `StopConnection`              |                                                         | Promise void  | Method to disconnect the voice channel.  |
 | `Dispose`                     |                                                         | void          | Dispose all data in object.              |
 
 ## 📝 Types
