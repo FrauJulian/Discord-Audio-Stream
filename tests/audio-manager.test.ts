@@ -3,9 +3,9 @@ import { sep } from 'node:path';
 import { PassThrough } from 'node:stream';
 
 import AudioManager from '../src/audio-manager';
-import { AudioManagerConfigError, AudioManagerStateError } from '@/errors';
-import { startFfmpeg } from '@/ffmpeg';
-import type { AudioSource, VoiceConnectionOptions } from '@/types';
+import { AudioManagerConfigError, AudioManagerStateError } from '../src';
+import { startFfmpeg } from '../src/ffmpeg';
+import type { AudioSource, VoiceConnectionOptions } from '../src';
 
 const mockAudioPlayer = {
     play: jest.fn(),
@@ -49,7 +49,7 @@ jest.mock('@discordjs/voice', () => ({
     joinVoiceChannel: jest.fn(() => mockConnection),
 }));
 
-jest.mock('@/ffmpeg', () => ({
+jest.mock('../src/ffmpeg', () => ({
     startFfmpeg: jest.fn(() => mockFfmpegHandle),
 }));
 
