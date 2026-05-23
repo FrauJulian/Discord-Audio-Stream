@@ -5,6 +5,7 @@ on:
 
 permissions:
     contents: write
+    id-token: write
 
 jobs:
     build:
@@ -14,11 +15,10 @@ jobs:
             - name: Checkout Repository
               uses: actions/checkout@v4
 
-            - name: use NodeJS v24.14.0
+            - name: Use NodeJS v24.14.0
               uses: actions/setup-node@v6
               with:
                   node-version: '24.14.0'
-                  registry-url: 'https://registry.npmjs.org'
                   package-manager-cache: false
 
             - name: Install Dependencies
@@ -42,8 +42,6 @@ jobs:
 
             - name: Publish Library
               run: npm publish --access public
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
             - name: Create GitHub release
               env:
@@ -61,7 +59,7 @@ jobs:
                   fi
 
                   if [ -z "$commit_messages" ]; then
-                      commit_messages='- No commits since the previous release'
+                    commit_messages='- No commits since the previous release'
                   fi
 
                   {
