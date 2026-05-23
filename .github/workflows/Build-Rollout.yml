@@ -13,6 +13,9 @@ jobs:
         steps:
             - name: Checkout Repository
               uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  fetch-tags: true
 
             - name: Use NodeJS v24.14.0
               uses: actions/setup-node@v6
@@ -47,10 +50,16 @@ jobs:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   RELEASE_TAG: v${{ steps.release_version.outputs.tag }}
               run: |
+                  git fetch --force --tags
+
                   previous_tag="$(gh api repos/${{ github.repository }}/releases --paginate --jq '.[] | select(.draft == false) | .tag_name' | grep -Fxv "$RELEASE_TAG" | head -n 1 || true)"
 
                   if [ -n "$previous_tag" ]; then
-                      commit_messages="$(git log --reverse --format='- %s' "${previous_tag}..${GITHUB_SHA}")"
+                      if git rev-parse --verify --quiet "${previous_tag}^{commit}" >/dev/null; then
+                          commit_messages="$(git log --reverse --format='- %s' "${previous_tag}..${GITHUB_SHA}")"
+                      else
+                          commit_messages="$(git log --reverse --format='- %s' "${GITHUB_SHA}")"
+                      fi
                       full_changelog="https://github.com/${{ github.repository }}/compare/${previous_tag}...${RELEASE_TAG}"
                   else
                       commit_messages="$(git log --reverse --format='- %s' "${GITHUB_SHA}")"
@@ -58,7 +67,7 @@ jobs:
                   fi
 
                   if [ -z "$commit_messages" ]; then
-                    commit_messages='- No commits since the previous release'
+                      commit_messages='- No commits since the previous release'
                   fi
 
                   {
