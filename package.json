@@ -38,7 +38,10 @@
         "build": "del-cli dist && tsup && tsc -p tsconfig.build.json && node scripts/copy-dts.cjs",
         "prepare": "husky"
     },
-    "repository": "https://github.com/FrauJulian/Discord-Audio-Stream",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/FrauJulian/Discord-Audio-Stream.git"
+    },
     "bugs": "https://github.com/FrauJulian/Discord-Audio-Stream/issues",
     "funding": "https://ko-fi.com/FrauJulian",
     "keywords": [

@@ -20,12 +20,9 @@ jobs:
               with:
                   node-version: '24.14.0'
                   registry-url: 'https://registry.npmjs.org'
-                  always-auth: true
 
-            - name: Create .npmrc
-              run: echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > ~/.npmrc
-              env:
-                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+            - name: Ensure trusted publishing capable npm
+              run: npm install -g npm@^11.5.1
 
             - name: Install Dependencies
               run: npm ci
@@ -47,9 +44,7 @@ jobs:
               run: npm run build
 
             - name: Publish Library
-              run: npm publish
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+              run: npm publish --access public
 
             - name: Create GitHub release
               env:
