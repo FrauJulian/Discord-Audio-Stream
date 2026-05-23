@@ -1,3 +1,2 @@
 #!/usr/bin/env sh
-npm run format:check || exit 1
-npm run lint || exit 1
+npm run check || exit 1
