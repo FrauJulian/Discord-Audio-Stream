@@ -1,2 +1,11 @@
 export { default as AudioManager } from './audio-manager';
-export type { VoiceAudioDataModel, VoiceConnectionDataModel } from './types';
+export { AudioManagerConfigError, AudioManagerError, AudioManagerStateError, FfmpegProcessError } from './errors';
+export type {
+    AudioManagerOptions,
+    AudioSource,
+    FfmpegMode,
+    FfmpegOptions,
+    PlaybackState,
+    VoiceConnectionOptions,
+    VolumeOptions,
+} from './types';

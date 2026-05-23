@@ -8,190 +8,250 @@ import {
     StreamType,
     VoiceConnectionStatus,
 } from '@discordjs/voice';
-import { join } from 'node:path';
-import type { IAudioManager, IDisposable, VoiceAudioDataModel, VoiceConnectionDataModel } from './types';
-import { spawn } from 'node:child_process';
-import type { Readable } from 'node:stream';
+import { isAbsolute, resolve } from 'node:path';
 
-export default class AudioManager implements IAudioManager, IDisposable {
-    private voiceConnection?: VoiceConnection | null;
-    private audioPlayer?: AudioPlayer | null;
-    private audioResource?: AudioResource | null;
+import { AudioManagerConfigError, AudioManagerStateError } from './errors';
+import { startFfmpeg, type FfmpegProcessHandle } from './ffmpeg';
+import type {
+    AudioManagerOptions,
+    AudioSource,
+    PlaybackState,
+    ResolvedAudioSource,
+    VoiceConnectionOptions,
+} from './types';
 
-    protected Active?: boolean | null;
-    protected Playing?: boolean | null;
+const DEFAULT_CONNECT_TIMEOUT_MS = 20_000;
+const DEFAULT_RENEW_INTERVAL_MS = 5_400_000;
 
-    private timeout?: NodeJS.Timeout | null;
-    private ffmpegProcess?: ReturnType<typeof spawn> | null;
-    private pcmStream?: Readable | null;
+export default class AudioManager {
+    private readonly audioPlayer: AudioPlayer;
 
-    constructor(
-        private readonly ffmpegMode: 'Native' | 'Standalone',
-        private renewMs: number | null = null,
-        private connectionData: VoiceConnectionDataModel | null = null,
-        private audioData: VoiceAudioDataModel | null = null,
-    ) {
-        this.renewMs = renewMs ? renewMs : 5400000;
-    }
+    private connection: VoiceConnection | undefined;
+    private resource: AudioResource | undefined;
+    private ffmpeg: FfmpegProcessHandle | undefined;
+    private renewTimer: NodeJS.Timeout | undefined;
+    private playbackState: PlaybackState = 'idle';
+    private connectionOptions: VoiceConnectionOptions | undefined;
+    private audioSource: AudioSource | undefined;
+    private readonly options: Required<Pick<AudioManagerOptions, 'connectTimeoutMs'>> &
+        Omit<AudioManagerOptions, 'connectTimeoutMs'>;
 
-    public OverrideVoiceConnectionData(connectionData: VoiceConnectionDataModel): void {
-        this.connectionData = connectionData;
-    }
-
-    public OverrideVoiceAudioDataModel(audioData: VoiceAudioDataModel): void {
-        this.audioData = audioData;
-    }
-
-    public CreateConnection(): void {
-        this.voiceConnection = joinVoiceChannel({
-            channelId: this.connectionData!.VoiceChannelId,
-            guildId: this.connectionData!.GuildId,
-            adapterCreator: this.connectionData!.VoiceAdapter,
-        });
-
-        this.timeout = setTimeout(async (): Promise<void> => {
-            await this.StopConnection();
-            await this.CreateAndPlay();
-        }, this.renewMs!);
-    }
-
-    public async PlayAudio(): Promise<void> {
-        if (!this.audioData || !this.voiceConnection) return;
-
-        await entersState(this.voiceConnection!, VoiceConnectionStatus.Ready, 20_000);
-
-        if (this.ffmpegProcess) {
-            this.ffmpegProcess.kill('SIGKILL');
-            this.ffmpegProcess = null;
-        }
-
-        let source: string;
-
-        if (this.audioData!.ResourceType === 'File') {
-            source = join(__dirname, this.audioData!.Resource);
-        } else if (this.audioData!.ResourceType === 'Link') {
-            source = this.audioData!.Resource;
-        } else {
-            throw new TypeError('Invalid resource type.');
-        }
-
-        this.ffmpegProcess = spawn(
-            this.ffmpegMode === 'Native' ? 'ffmpeg' : require('ffmpeg-static'),
-            [
-                '-loglevel',
-                'error',
-                '-i',
-                source,
-                '-analyzeduration',
-                '0',
-                '-f',
-                's16le',
-                '-ar',
-                '48000',
-                '-ac',
-                '2',
-                'pipe:1',
-            ],
-            {
-                stdio: ['ignore', 'pipe', 'pipe'],
-            },
-        );
-
-        this.pcmStream = this.ffmpegProcess!.stdout as Readable;
-
-        this.audioResource = createAudioResource(this.pcmStream, {
-            inputType: StreamType.Raw,
-            inlineVolume: true,
-        });
-
+    public constructor(options: AudioManagerOptions = {}) {
+        this.options = {
+            ...options,
+            connectTimeoutMs: options.connectTimeoutMs ?? DEFAULT_CONNECT_TIMEOUT_MS,
+        };
+        this.connectionOptions = options.connection;
+        this.audioSource = options.source;
         this.audioPlayer = createAudioPlayer({
             behaviors: {
                 noSubscriber: NoSubscriberBehavior.Play,
             },
         });
-
-        this.voiceConnection!.subscribe(this.audioPlayer);
-
-        this.audioPlayer.play(this.audioResource);
-        this.Playing = true;
     }
 
-    public PauseAudio(): void {
-        if (this.Playing) {
-            this.audioPlayer!.pause();
-            this.Playing = false;
-        } else {
-            throw new ReferenceError('Audio is not playing.');
+    public get state(): PlaybackState {
+        return this.playbackState;
+    }
+
+    public get isPlaying(): boolean {
+        return this.playbackState === 'playing';
+    }
+
+    public get isConnected(): boolean {
+        return Boolean(this.connection);
+    }
+
+    public setConnection(options: VoiceConnectionOptions): void {
+        this.assertNotDisposed();
+        this.connectionOptions = options;
+    }
+
+    public setSource(source: AudioSource): void {
+        this.assertNotDisposed();
+        this.audioSource = source;
+    }
+
+    public async connect(): Promise<void> {
+        this.assertNotDisposed();
+
+        if (!this.connectionOptions) {
+            throw new AudioManagerConfigError('Voice connection options are required before connecting.');
+        }
+
+        this.clearRenewTimer();
+        this.playbackState = 'connecting';
+        this.connection?.destroy();
+        this.connection = joinVoiceChannel({
+            guildId: this.connectionOptions.guildId,
+            channelId: this.connectionOptions.channelId,
+            adapterCreator: this.connectionOptions.adapterCreator,
+        });
+        this.connection.subscribe(this.audioPlayer);
+
+        await entersState(this.connection, VoiceConnectionStatus.Ready, this.options.connectTimeoutMs);
+        this.playbackState = 'ready';
+        this.scheduleRenewal();
+    }
+
+    public async play(source?: AudioSource): Promise<void> {
+        this.assertNotDisposed();
+
+        if (source) {
+            this.setSource(source);
+        }
+
+        if (!this.connection) {
+            throw new AudioManagerStateError('A voice connection is required before audio can be played.');
+        }
+
+        const resolvedSource = this.resolveSource();
+        this.stopCurrentPlayback();
+        this.ffmpeg = startFfmpeg(resolvedSource.input, this.options.ffmpeg);
+        this.resource = createAudioResource(this.ffmpeg.process.stdout, {
+            inputType: StreamType.Raw,
+            inlineVolume: this.options.volume?.enabled === true,
+        });
+
+        if (this.options.volume?.enabled === true && this.options.volume.initialPercent !== undefined) {
+            this.setVolume(this.options.volume.initialPercent);
+        }
+
+        this.audioPlayer.play(this.resource);
+        this.playbackState = 'playing';
+    }
+
+    public async start(): Promise<void> {
+        await this.connect();
+        await this.play();
+    }
+
+    public pause(): void {
+        this.assertNotDisposed();
+
+        if (this.playbackState !== 'playing') {
+            throw new AudioManagerStateError('Audio can only be paused while it is playing.');
+        }
+
+        this.audioPlayer.pause();
+        this.playbackState = 'paused';
+    }
+
+    public resume(): void {
+        this.assertNotDisposed();
+
+        if (this.playbackState !== 'paused') {
+            throw new AudioManagerStateError('Audio can only be resumed while it is paused.');
+        }
+
+        this.audioPlayer.unpause();
+        this.playbackState = 'playing';
+    }
+
+    public async stop(): Promise<void> {
+        if (this.playbackState === 'disposed') {
+            return;
+        }
+
+        this.clearRenewTimer();
+        this.stopCurrentPlayback();
+        this.audioPlayer.stop(true);
+        this.connection?.disconnect();
+        this.connection?.destroy();
+        this.connection = undefined;
+        this.playbackState = 'stopped';
+    }
+
+    public setVolume(volumeInPercent: number): void {
+        this.assertNotDisposed();
+
+        if (this.options.volume?.enabled !== true) {
+            throw new AudioManagerStateError('Volume control requires volume.enabled to be true.');
+        }
+
+        if (volumeInPercent < 0 || volumeInPercent > 100) {
+            throw new AudioManagerConfigError('Volume must be between 0 and 100 percent.');
+        }
+
+        if (!this.resource?.volume) {
+            throw new AudioManagerStateError('No audio resource with volume control is currently active.');
+        }
+
+        this.resource.volume.setVolume(volumeInPercent / 100);
+    }
+
+    public dispose(): void {
+        if (this.playbackState === 'disposed') {
+            return;
+        }
+
+        this.clearRenewTimer();
+        this.stopCurrentPlayback();
+        this.audioPlayer.stop(true);
+        this.connection?.destroy();
+        this.connection = undefined;
+        this.connectionOptions = undefined;
+        this.audioSource = undefined;
+        this.playbackState = 'disposed';
+    }
+
+    private resolveSource(): ResolvedAudioSource {
+        if (!this.audioSource) {
+            throw new AudioManagerConfigError('Audio source is required before playback can start.');
+        }
+
+        if (this.audioSource.type === 'url') {
+            try {
+                return {
+                    input: new URL(this.audioSource.url).toString(),
+                    source: this.audioSource,
+                };
+            } catch (error) {
+                throw new AudioManagerConfigError(`Invalid audio source URL. Cause: ${String(error)}`);
+            }
+        }
+
+        return {
+            input: isAbsolute(this.audioSource.path)
+                ? this.audioSource.path
+                : resolve(process.cwd(), this.audioSource.path),
+            source: this.audioSource,
+        };
+    }
+
+    private scheduleRenewal(): void {
+        const renewIntervalMs = this.options.renewIntervalMs ?? DEFAULT_RENEW_INTERVAL_MS;
+
+        if (renewIntervalMs === false) {
+            return;
+        }
+
+        this.renewTimer = setTimeout(() => {
+            void this.start();
+        }, renewIntervalMs);
+
+        if (typeof this.renewTimer.unref === 'function') {
+            this.renewTimer.unref();
         }
     }
 
-    public ResumeAudio(): void {
-        if (!this.Playing) {
-            this.audioPlayer!.unpause();
-            this.Playing = true;
-        } else {
-            throw new ReferenceError('Audio is playing.');
+    private clearRenewTimer(): void {
+        if (this.renewTimer) {
+            clearTimeout(this.renewTimer);
+            this.renewTimer = undefined;
         }
     }
 
-    public async CreateAndPlay(): Promise<void> {
-        this.CreateConnection();
-        await this.PlayAudio();
+    private stopCurrentPlayback(): void {
+        this.resource?.playStream.destroy();
+        this.resource = undefined;
+        this.ffmpeg?.stop();
+        this.ffmpeg = undefined;
     }
 
-    public async StopConnection(): Promise<void> {
-        this.voiceConnection?.disconnect();
-        this.voiceConnection?.destroy();
-        this.voiceConnection = null;
-
-        this.Active = false;
-        this.Playing = false;
-    }
-
-    public SetVolume(volumeInPercent: number): void {
-        if (volumeInPercent < 0 || volumeInPercent > 100) throw new Error('Volume must be between 0 and 100.');
-        this.audioResource!.volume!.setVolume(volumeInPercent / 100);
-    }
-
-    public Dispose(): void {
-        try {
-            if (this.timeout) {
-                clearTimeout(this.timeout);
-            }
-
-            if (this.audioPlayer) {
-                this.audioPlayer.stop(true);
-            }
-
-            if (this.audioPlayer) {
-                this.audioPlayer!.stop();
-
-                if (this.audioResource && this.audioResource.playStream) {
-                    this.audioResource!.playStream.destroy();
-                }
-            }
-
-            if (this.voiceConnection) {
-                this.voiceConnection!.destroy();
-            }
-
-            if (this.ffmpegProcess) {
-                this.ffmpegProcess.kill('SIGKILL');
-                this.ffmpegProcess = null;
-            }
-
-            this.pcmStream?.destroy();
-            this.pcmStream = null;
-
-            this.audioPlayer = null;
-            this.audioResource = null;
-            this.voiceConnection = null;
-            this.timeout = null;
-            this.Active = null;
-            this.Playing = null;
-            this.connectionData = null;
-            this.audioData = null;
-            this.renewMs = null;
-        } catch {}
+    private assertNotDisposed(): void {
+        if (this.playbackState === 'disposed') {
+            throw new AudioManagerStateError('AudioManager has been disposed.');
+        }
     }
 }

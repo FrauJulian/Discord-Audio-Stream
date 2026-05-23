@@ -15,10 +15,10 @@ jobs:
             - name: Checkout Repository
               uses: actions/checkout@v4
 
-            - name: use NodeJS v22.12.0
+            - name: use NodeJS v24.14.0
               uses: actions/setup-node@v4
               with:
-                  node-version: '22.12.0'
+                  node-version: '24.14.0'
                   registry-url: 'https://registry.npmjs.org'
                   always-auth: true
 
@@ -28,9 +28,15 @@ jobs:
                   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
             - name: Install Dependencies
-              run: npm install
+              run: npm ci
 
-            - name: run Rollout Build
+            - name: Run Checks
+              run: npm run check
+
+            - name: Set Release Version
+              run: npm run release:version
+
+            - name: Run Build
               run: npm run build
 
             - name: Publish Library

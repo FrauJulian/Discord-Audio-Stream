@@ -36,7 +36,7 @@ const config = [
                 'warn',
                 { vars: 'all', varsIgnorePattern: '^_', args: 'after-used', argsIgnorePattern: '^_' },
             ],
-            '@typescript-eslint/no-explicit-any': 'off',
+            '@typescript-eslint/no-explicit-any': 'error',
 
             /* Imports */
             'import/first': 'error',
@@ -46,7 +46,7 @@ const config = [
                 'error',
                 {
                     devDependencies: [
-                        '**/*.config.{js,cjs,mjs,ts}',
+                        '**/*.config*.{js,cjs,mjs,ts}',
                         '**/scripts/**',
                         '**/*.test.{ts,js}',
                         '**/Testing.{ts,js}',

@@ -1,127 +1,315 @@
 # Discord Audio Stream
 
 [![npm](https://img.shields.io/npm/dw/discord-audio-stream)](http://npmjs.org/package/discord-audio-stream)
-![GitHub package.json version](https://img.shields.io/github/package-json/v/FrauJulian/discord-audio-stream)
+![latest release](https://img.shields.io/badge/dynamic/json?label=release&query=$.name&url=https%3A%2F%2Fapi.github.com%2Frepos%2FFrauJulian%2Fdiscord-audio-stream%2Freleases%2Flatest&color=blue)
 ![GitHub Repo stars](https://img.shields.io/github/stars/FrauJulian/discord-audio-stream?style=social)
 
-**This module is designed to work with [discord.js/voice](https://www.npmjs.com/package/@discordjs/voice) v0.19. This
-package doesn't support older
-versions!**
+> **Designed for 24/7 Discord audio playback.**  
+> `discord-audio-stream` is a small TypeScript library for managed Discord voice playback through
+> `@discordjs/voice` and ffmpeg.
 
-> **Designed for 24/7 audio playing on discord.**  
-> Discord has many unwanted rate limits, especially in the audio area. This package does all the work and ensures that
-> your music never stops playing due to ffmpeg or Discord, with as little effort as possible.
+Discord voice streams need careful lifecycle handling. This package manages the voice connection, ffmpeg process,
+raw PCM resource creation, optional reconnect renewal, and predictable cleanup so your bot code stays small and readable.
 
-> **Recommended best Practise:**  
-> Create a global Map<GuildId, AudioManager> (Map<KEY, OBJ>) list. When the feature is used on a guild, add a new
-> instance of AudioManager to the Map. When starting the connection or audio, overwrite the respective configuration with
-> the override methods provided. To finally start, use the respective method. For each call and each change, retrieve the
-> AudioManager object from the list and perform your actions. When the feature get stopped, first execute StopConnection
-> and then Dispose to save as much power as possible. Garbage collection does the rest.  
-> **For large features:** For large systems, it is recommended to queue each start with the
-> packet [p-queue](https://www.npmjs.com/package/p-queue), to give ffmpeg enough time..
+> **Recommended best practice:**  
+> Keep one `AudioManager` per guild, usually in a `Map<string, AudioManager>`. Update the connection or source through
+> `setConnection()` and `setSource()`, then call `start()`. When playback stops, call `stop()`. When the manager will not
+> be reused, call `dispose()` to release timers, streams, ffmpeg, and the voice connection.
+
+> **For large bots:**  
+> Queue many simultaneous starts, for example with [`p-queue`](https://www.npmjs.com/package/p-queue), so the host does
+> not spawn too many ffmpeg processes in the same tick.
 
 ## 👋 Support
 
-Please create an [issue](https://github.com/FrauJulian/DiscordAudioStreamNPM/issues) on github or write [
-`fraujulian`](https://discord.com/users/860206216893693973) on discord!
+Please create an [issue](https://github.com/FrauJulian/Discord-Audio-Stream/issues) on GitHub or contact
+[`fraujulian`](https://discord.com/users/860206216893693973) on Discord.
 
 ## 📝 Usage
 
 ### Installation
 
-**Node.js 22.12.0 or newer is required.**
+**Node.js `22.12.0` or newer is required.**
+
+Install the library and the required voice packages:
 
 ```bash
-npm install discord-audio-stream
-yarn add discord-audio-stream
-pnpm add discord-audio-stream
-bun add discord-audio-stream
+npm install discord-audio-stream @discordjs/voice prism-media @snazzah/davey opusscript
 ```
 
-#### Required Dependencies
+`libsodium-wrappers` is optional. Install it only when your runtime does not support `aes-256-gcm`:
 
-- > You only need to install [`libsodium-wrappers`](https://www.npmjs.com/package/libsodium-wrappers) if your system does not support `aes-256-gcm` (verify by running `require('node:crypto').getCiphers().includes('aes-256-gcm')`).
-- [`@snazzah/davey`](https://www.npmjs.com/package/@snazzah/davey)
-- [`opusscript`](https://www.npmjs.com/package/opusscript)
-- [`prism-media`](https://www.npmjs.com/package/prism-media)
-- [@discordjs/voice](https://www.npmjs.com/package/@discordjs/voice)
-- **FFmpeg** (one of those)
-    - [`FFmpeg`](https://ffmpeg.org/) (environment) - *recommended*
-    - [`FFmpeg-static`](https://www.npmjs.com/package/ffmpeg-static) (library)
-
-### AudioManager Instance
-
-#### Constructor
-
-```
-AudioManager(ffmpegMode: string, renewInMs, number, connectionData: VoiceConnectionDataModel, audioData: VoiceAudioDataModel): IDisposable, IAudioManager
+```bash
+node -e "console.log(require('node:crypto').getCiphers().includes('aes-256-gcm'))"
+npm install libsodium-wrappers
 ```
 
-- `ffmpegMode`: 'Native' or 'Standalone'
-    - Native: [`FFmpeg`](https://ffmpeg.org/) (environment)
-    - Standalone: [`FFmpeg-static`](https://www.npmjs.com/package/ffmpeg-static) (library)
-- `renewInMs`: renewal time, default 1,5h = 5400000ms  - optional
-- `connectionData`: options for voice connection - optional
-- `audioData`: options for audio player - optional
+For bundled ffmpeg support, install `ffmpeg-static` and use `ffmpeg.mode: 'static'`:
 
-#### Example
+```bash
+npm install ffmpeg-static
+```
 
-```js
-let audioManager = new AudioManager(
-    'Native',
-    5400000,
-    {
-        VoiceChannelId: 0, //voice channel id where to play music
-        GuildId: 0, //guild id
-        VoiceAdapter: 0, //guild VoiceAdapter
+If ffmpeg is already available on the host PATH, use `ffmpeg.mode: 'native'`.
+
+### AudioManager Example
+
+```ts
+import { AudioManager } from 'discord-audio-stream';
+
+const manager = new AudioManager({
+    connection: {
+        guildId: guild.id,
+        channelId: voiceChannel.id,
+        adapterCreator: guild.voiceAdapterCreator,
     },
-    {
-        ResourceType: '', //resource type like link or file
-        Resource: '', //auto play link or file name
+    source: {
+        type: 'url',
+        url: 'https://example.com/live-stream.mp3',
     },
-);
+    ffmpeg: {
+        mode: 'native',
+    },
+    renewIntervalMs: 5_400_000,
+});
+
+await manager.start();
 ```
 
-### Fields and Methods of AudioManager
+For a file source:
 
-#### Fields
+```ts
+manager.setSource({
+    type: 'file',
+    path: 'audio/intro.mp3',
+});
 
-| Name      | Type     | Security  | Description                           |
-| --------- | -------- | --------- | ------------------------------------- |
-| `Active`  | **bool** | protected | To check if the connection is active. |
-| `Playing` | **bool** | protected | To check if it is playing audio.      |
+await manager.start();
+```
 
-#### Methods
+Relative file paths are resolved from `process.cwd()`. URL sources are validated before playback starts.
 
-| Name                          | Parameters                                              | Return type   | Description                              |
-| ----------------------------- | ------------------------------------------------------- | ------------- | ---------------------------------------- |
-| `OverrideVoiceConnectionData` | `connectionData`: **VoiceConnectionDataModel**          | void          | To override intern connectionData field. |
-| `OverrideVoiceAudioDataModel` | `audioData`: **VoiceAudioDataModel**                    | void          | To override intern audioData field.      |
-| `CreateAndPlay`               |                                                         | Promise void  | Join channel and start playing audio.    |
-| `CreateConnection`            |                                                         | void          | Let it connect to voice channel.         |
-| `PlayAudio`                   |                                                         | Promise void  | To start playing audio.                  |
-| `PauseAudio`                  |                                                         | void          | Pause the audio, if it is playing        |
-| `ResumeAudio`                 |                                                         | void          | Resume the audio, if it is paused.       |
-| `SetVolume`                   | `volume`: number (0 - 100 percent)                      | void          | To set the audio volume.                 |
-| `StopConnection`              |                                                         | Promise void  | Method to disconnect the voice channel.  |
-| `Dispose`                     |                                                         | void          | Dispose all data in object.              |
+## ⚙️ API
 
-## 📝 Types
+### Constructor
 
-- [**VoiceConnection** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/VoiceConnection.ts#L166)
-- [**AudioPlayer** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/audio/AudioPlayer.ts#L155)
-- [**AudioResource** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/audio/AudioResource.ts#L44)
-- [**DiscordGatewayAdapterCreator** by discord.js/voice](https://github.com/discordjs/discord.js/blob/main/packages/voice/src/util/adapter.ts#L50)
-- [**VoiceConnectionDataModel** by discord-audio-stream](https://github.com/FrauJulian/Discord-Audio-Stream/blob/master/src/types.d.ts#L3)
-- [**VoiceAudioDataModel** by discord-audio-stream](https://github.com/FrauJulian/Discord-Audio-Stream/blob/master/src/types.d.ts#L21)
-- [**IDisposable** by discord-audio-stream](https://github.com/FrauJulian/Discord-Audio-Stream/blob/master/src/types.d.ts#L38)
-- [**IAudioManager** by discord-audio-stream](https://github.com/FrauJulian/Discord-Audio-Stream/blob/master/src/types.d.ts#L45)
+```ts
+type AudioManagerOptions = {
+    ffmpeg?: {
+        mode?: 'native' | 'static';
+        executablePath?: string;
+        inputArgs?: readonly string[];
+        outputArgs?: readonly string[];
+    };
+    connection?: {
+        guildId: string;
+        channelId: string;
+        adapterCreator: DiscordGatewayAdapterCreator;
+    };
+    source?: { type: 'url'; url: string } | { type: 'file'; path: string };
+    renewIntervalMs?: number | false;
+    connectTimeoutMs?: number;
+    volume?: {
+        enabled?: boolean;
+        initialPercent?: number;
+    };
+};
+```
 
-## 📋 Contributors:
+### Defaults
+
+| Option             | Default     |
+| ------------------ | ----------- |
+| `ffmpeg.mode`      | `'native'`  |
+| `connectTimeoutMs` | `20_000`    |
+| `renewIntervalMs`  | `5_400_000` |
+| `volume.enabled`   | `false`     |
+
+### Methods
+
+| Method                   | Description                                                                        |
+| ------------------------ | ---------------------------------------------------------------------------------- |
+| `setConnection(options)` | Replaces the voice connection target.                                              |
+| `setSource(source)`      | Replaces the audio source.                                                         |
+| `connect()`              | Joins the configured Discord voice channel.                                        |
+| `play(source?)`          | Starts playback on an existing connection.                                         |
+| `start()`                | Connects and starts playback.                                                      |
+| `pause()`                | Pauses active playback.                                                            |
+| `resume()`               | Resumes paused playback.                                                           |
+| `stop()`                 | Stops playback, clears renewal, and destroys the voice connection.                 |
+| `setVolume(percent)`     | Sets volume from `0` to `100`; requires `volume.enabled: true`.                    |
+| `dispose()`              | Idempotently releases timers, ffmpeg, streams, player state, and voice connection. |
+
+### State
+
+```ts
+manager.state; // 'idle' | 'connecting' | 'ready' | 'playing' | 'paused' | 'stopped' | 'disposed'
+manager.isPlaying;
+manager.isConnected;
+```
+
+## 🔊 Audio Options
+
+### Volume
+
+Inline volume has a runtime cost in `@discordjs/voice`, so it is disabled by default.
+
+```ts
+const manager = new AudioManager({
+    connection,
+    source,
+    volume: {
+        enabled: true,
+        initialPercent: 50,
+    },
+});
+
+await manager.start();
+manager.setVolume(25);
+```
+
+Calling `setVolume()` without `volume.enabled: true` throws `AudioManagerStateError`.
+
+### ffmpeg Modes
+
+- `mode: 'native'` uses the `ffmpeg` executable from the host environment.
+- `mode: 'static'` resolves the optional `ffmpeg-static` package.
+- `executablePath` overrides both modes and is useful for Docker images or custom ffmpeg builds.
+
+Default output is raw Discord-compatible PCM: `s16le`, `48000 Hz`, `2 channels`.
+
+You can override ffmpeg arguments through `ffmpeg.inputArgs` and `ffmpeg.outputArgs`. When you override them, you are
+responsible for keeping the output compatible with `StreamType.Raw`.
+
+### Renewal
+
+By default, the manager schedules a renewal after `5_400_000 ms` so long-running streams can reconnect periodically.
+Set `renewIntervalMs: false` to disable this behavior:
+
+```ts
+const manager = new AudioManager({
+    connection,
+    source,
+    renewIntervalMs: false,
+});
+```
+
+`stop()` and `dispose()` always clear the renewal timer.
+
+## 🧯 Errors
+
+The package exports these error classes:
+
+- `AudioManagerError`
+- `AudioManagerConfigError`
+- `AudioManagerStateError`
+- `FfmpegProcessError`
+
+Configuration problems, such as a missing source or invalid URL, throw `AudioManagerConfigError`. Invalid lifecycle
+operations, such as calling `pause()` while nothing is playing, throw `AudioManagerStateError`.
+
+## 📋 Migration From `0.7`
+
+Version `1.0` intentionally breaks the old PascalCase API.
+
+| Old                                                      | New                                                                 |
+| -------------------------------------------------------- | ------------------------------------------------------------------- |
+| `new AudioManager('Native', renewMs, connection, audio)` | `new AudioManager({ ffmpeg, renewIntervalMs, connection, source })` |
+| `OverrideVoiceConnectionData(...)`                       | `setConnection(...)`                                                |
+| `OverrideVoiceAudioDataModel(...)`                       | `setSource(...)`                                                    |
+| `CreateConnection()`                                     | `connect()`                                                         |
+| `PlayAudio()`                                            | `play()`                                                            |
+| `CreateAndPlay()`                                        | `start()`                                                           |
+| `PauseAudio()`                                           | `pause()`                                                           |
+| `ResumeAudio()`                                          | `resume()`                                                          |
+| `StopConnection()`                                       | `stop()`                                                            |
+| `SetVolume(...)`                                         | `setVolume(...)`                                                    |
+| `Dispose()`                                              | `dispose()`                                                         |
+
+Old connection data:
+
+```ts
+{
+    VoiceChannelId: voiceChannel.id,
+    GuildId: guild.id,
+    VoiceAdapter: guild.voiceAdapterCreator,
+}
+```
+
+New connection data:
+
+```ts
+{
+    channelId: voiceChannel.id,
+    guildId: guild.id,
+    adapterCreator: guild.voiceAdapterCreator,
+}
+```
+
+Old resource data:
+
+```ts
+{
+    ResourceType: ('Link', Resource, 'https://example.com/audio.mp3');
+}
+{
+    ResourceType: ('File', Resource, 'audio/intro.mp3');
+}
+```
+
+New source data:
+
+```ts
+{
+    type: ('url', url, 'https://example.com/audio.mp3');
+}
+{
+    type: ('file', path, 'audio/intro.mp3');
+}
+```
+
+Old ffmpeg modes:
+
+```ts
+'Native';
+'Standalone';
+```
+
+New ffmpeg modes:
+
+```ts
+{
+    ffmpeg: {
+        mode: 'native';
+    }
+}
+{
+    ffmpeg: {
+        mode: 'static';
+    }
+}
+```
+
+## 🧑‍💻 Development
+
+```bash
+npm ci
+npm run check
+npm run build
+```
+
+`npm run check` runs formatting, linting, type-aware linting, TypeScript type checking, and unit tests.
+
+Release version stamping is separate from normal builds:
+
+```bash
+npm run release:version
+```
+
+## 📋 Contributors
 
 ~ [**FrauJulian - Julian Lechner**](https://fraujulian.xyz/) - CODEOWNER
 
 ## 🤝 Enjoy the package?
 
-Give it a star ⭐ on [github](https://github.com/FrauJulian/discord-audio-stream)!
+Give it a star ⭐ on [GitHub](https://github.com/FrauJulian/discord-audio-stream)!
