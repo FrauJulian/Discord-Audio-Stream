@@ -43,3 +43,49 @@ jobs:
 
             - name: Run Build
               run: npm run build
+
+            - name: Publish Library
+              run: npm publish --access public
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: Create GitHub release
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  RELEASE_TAG: v${{ steps.release_version.outputs.tag }}
+              run: |
+                  git fetch --force --tags
+
+                  previous_tag="$(gh api repos/${{ github.repository }}/releases --paginate --jq '.[] | select(.draft == false) | .tag_name' | grep -Fxv "$RELEASE_TAG" | head -n 1 || true)"
+
+                  if [ -n "$previous_tag" ]; then
+                      if git rev-parse --verify --quiet "${previous_tag}^{commit}" >/dev/null; then
+                          commit_messages="$(git log --reverse --format='- %s' "${previous_tag}..${GITHUB_SHA}")"
+                      else
+                          commit_messages="$(git log --reverse --format='- %s' "${GITHUB_SHA}")"
+                      fi
+                      full_changelog="https://github.com/${{ github.repository }}/compare/${previous_tag}...${RELEASE_TAG}"
+                  else
+                      commit_messages="$(git log --reverse --format='- %s' "${GITHUB_SHA}")"
+                      full_changelog=""
+                  fi
+
+                  if [ -z "$commit_messages" ]; then
+                      commit_messages='- No commits since the previous release'
+                  fi
+
+                  {
+                      echo '## Changes'
+                      echo
+                      printf '%s\n' "$commit_messages"
+                      echo
+                      if [ -n "$full_changelog" ]; then
+                          echo "**Full Changelog**: ${full_changelog}"
+                      fi
+                  } > release-notes.md
+
+                  if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+                      gh release edit "$RELEASE_TAG" --title "$RELEASE_TAG" --notes-file release-notes.md
+                  else
+                      gh release create "$RELEASE_TAG" --target "${GITHUB_SHA}" --title "$RELEASE_TAG" --notes-file release-notes.md
+                  fi
