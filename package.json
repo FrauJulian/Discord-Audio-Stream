@@ -1,7 +1,7 @@
 {
     "name": "discord-audio-stream",
-    "version": "1.0.DDDhhmm",
-    "license": "LGPL-2.1-only",
+    "version": "x.x.x",
+    "license": "LGPL-3.0-only",
     "description": "A small Discord voice audio streaming library with managed ffmpeg playback.",
     "exports": {
         ".": {
@@ -26,7 +26,9 @@
     },
     "scripts": {
         "update:dependencies": "npx npm-check-updates --upgrade",
-        "release:version": "node set-version.js",
+        "release:version": "node set-version.js set-ci-version",
+        "check:version": "node set-version.js check-placeholder",
+        "fix:version": "node set-version.js fix-placeholder",
         "lint": "eslint . --ext .ts,.tsx,.js,.cjs,.mjs",
         "lint:fix": "eslint . --ext .ts,.tsx,.js,.cjs,.mjs --fix",
         "lint:types": "eslint . --config eslint.config.typeaware.cjs --ext .ts,.tsx",
@@ -34,7 +36,8 @@
         "format:check": "prettier --check .",
         "typecheck": "tsc --noEmit",
         "test": "jest --runInBand",
-        "check": "npm run format:check && npm run lint && npm run lint:types && npm run typecheck && npm run test",
+        "check": "npm run check:version && npm run format:check && npm run lint && npm run lint:types && npm run typecheck && npm run test",
+        "fix": "npm run fix:version && npm run format && npm run lint:fix",
         "build": "del-cli dist && tsup && tsc -p tsconfig.build.json && node scripts/copy-dts.cjs",
         "prepare": "husky"
     },
@@ -53,7 +56,7 @@
         "24/7"
     ],
     "contributors": [
-        "FrauJulian - Lechner Julian <fraujulian@lechner.top>"
+        "Julian Lechner - FrauJulian <fraujulian@lechner.top>"
     ],
     "lint-staged": {
         "*.{ts,tsx,js,cjs,mjs}": [
@@ -103,7 +106,7 @@
         }
     },
     "engines": {
-        "node": ">=22.12.0"
+        "node": ">=22.22.3"
     },
     "private": false,
     "publishConfig": {
