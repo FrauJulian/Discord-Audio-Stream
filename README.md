@@ -29,7 +29,7 @@ Please create an [issue](https://github.com/FrauJulian/Discord-Audio-Stream/issu
 
 ### Installation
 
-**Node.js `22.12.0` or newer is required.**
+**Node.js `22.22.3` or newer is required.**
 
 Install the library and the required voice packages:
 
@@ -208,102 +208,12 @@ The package exports these error classes:
 Configuration problems, such as a missing source or invalid URL, throw `AudioManagerConfigError`. Invalid lifecycle
 operations, such as calling `pause()` while nothing is playing, throw `AudioManagerStateError`.
 
-## 📋 Migration From `0.7`
-
-Version `1.0` intentionally breaks the old PascalCase API.
-
-| Old                                                      | New                                                                 |
-| -------------------------------------------------------- | ------------------------------------------------------------------- |
-| `new AudioManager('Native', renewMs, connection, audio)` | `new AudioManager({ ffmpeg, renewIntervalMs, connection, source })` |
-| `OverrideVoiceConnectionData(...)`                       | `setConnection(...)`                                                |
-| `OverrideVoiceAudioDataModel(...)`                       | `setSource(...)`                                                    |
-| `CreateConnection()`                                     | `connect()`                                                         |
-| `PlayAudio()`                                            | `play()`                                                            |
-| `CreateAndPlay()`                                        | `start()`                                                           |
-| `PauseAudio()`                                           | `pause()`                                                           |
-| `ResumeAudio()`                                          | `resume()`                                                          |
-| `StopConnection()`                                       | `stop()`                                                            |
-| `SetVolume(...)`                                         | `setVolume(...)`                                                    |
-| `Dispose()`                                              | `dispose()`                                                         |
-
-Old connection data:
-
-```ts
-{
-    VoiceChannelId: voiceChannel.id,
-    GuildId: guild.id,
-    VoiceAdapter: guild.voiceAdapterCreator,
-}
-```
-
-New connection data:
-
-```ts
-{
-    channelId: voiceChannel.id,
-    guildId: guild.id,
-    adapterCreator: guild.voiceAdapterCreator,
-}
-```
-
-Old resource data:
-
-```ts
-{
-    ResourceType: ('Link', Resource, 'https://example.com/audio.mp3');
-}
-{
-    ResourceType: ('File', Resource, 'audio/intro.mp3');
-}
-```
-
-New source data:
-
-```ts
-{
-    type: ('url', url, 'https://example.com/audio.mp3');
-}
-{
-    type: ('file', path, 'audio/intro.mp3');
-}
-```
-
-Old ffmpeg modes:
-
-```ts
-'Native';
-'Standalone';
-```
-
-New ffmpeg modes:
-
-```ts
-{
-    ffmpeg: {
-        mode: 'native';
-    }
-}
-{
-    ffmpeg: {
-        mode: 'static';
-    }
-}
-```
-
 ## 🧑‍💻 Development
 
 ```bash
 npm ci
 npm run check
 npm run build
-```
-
-`npm run check` runs formatting, linting, type-aware linting, TypeScript type checking, and unit tests.
-
-Release version stamping is separate from normal builds:
-
-```bash
-npm run release:version
 ```
 
 ## 📋 Contributors
