@@ -1,5 +1,9 @@
-node_modules
-dist
-.git
-.idea
-.vscode
+node_modules/
+dist/
+coverage/
+
+.git/
+.idea/
+.vscode/
+
+package-lock.json

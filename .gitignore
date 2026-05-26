@@ -1,4 +1,13 @@
-.idea
-.git
-node_modules
-dist
+.idea/
+.vscode/
+node_modules/
+dist/
+coverage/
+
+.npm/
+.eslintcache
+*.log
+*.tsbuildinfo
+
+.DS_Store
+Thumbs.db

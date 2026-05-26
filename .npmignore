@@ -6,6 +6,8 @@
 
 dist
 node_modules
+coverage
+.npm
 
 .husky
 src
@@ -24,6 +26,8 @@ CODEOWNERS
 tsconfig.json
 tsconfig.eslint.json
 tsup.config.ts
-eslint.config.js
+eslint.config.cjs
 eslint.config.typeaware.cjs
 package-lock.json
+jest.config.cjs
+tests
