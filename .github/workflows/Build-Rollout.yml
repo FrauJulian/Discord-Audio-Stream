@@ -33,7 +33,7 @@ jobs:
 
             - name: Set Release Version
               id: version
-              run: npm run release:version
+              run: npm run version:place
 
             - name: Export Release Version
               id: release_version
