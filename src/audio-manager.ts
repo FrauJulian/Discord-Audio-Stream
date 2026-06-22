@@ -82,20 +82,26 @@ export default class AudioManager {
         this.clearRenewTimer();
         this.playbackState = 'connecting';
         this.connection?.destroy();
-        this.connection = joinVoiceChannel({
+        const connection = joinVoiceChannel({
             guildId: this.connectionOptions.guildId,
             channelId: this.connectionOptions.channelId,
             adapterCreator: this.connectionOptions.adapterCreator,
         });
-        this.connection.subscribe(this.audioPlayer);
+        this.connection = connection;
+        connection.subscribe(this.audioPlayer);
 
         try {
-            await entersState(this.connection, VoiceConnectionStatus.Ready, this.options.connectTimeoutMs);
+            await entersState(connection, VoiceConnectionStatus.Ready, this.options.connectTimeoutMs);
         } catch (error) {
-            this.connection.destroy();
-            this.connection = undefined;
+            connection.destroy();
+            if (this.connection === connection) {
+                this.connection = undefined;
+            }
             this.playbackState = 'stopped';
             throw error;
+        }
+        if (this.connection !== connection) {
+            throw new AudioManagerStateError('Voice connection was stopped before it became ready.');
         }
         this.playbackState = 'ready';
         this.scheduleRenewal();
@@ -115,23 +121,35 @@ export default class AudioManager {
         const resolvedSource = this.resolveSource();
         this.stopCurrentPlayback();
         this.ffmpeg = startFfmpeg(resolvedSource.input, this.options.ffmpeg);
+        const ffmpeg = this.ffmpeg;
         try {
-            await this.ffmpeg.ready;
+            await ffmpeg.ready;
+            if (this.ffmpeg !== ffmpeg) {
+                throw new AudioManagerStateError('Playback was stopped before ffmpeg became ready.');
+            }
+            this.resource = createAudioResource(ffmpeg.process.stdout, {
+                inputType: StreamType.Raw,
+                inlineVolume: this.options.volume?.enabled === true,
+            });
         } catch (error) {
-            this.stopCurrentPlayback();
+            if (this.ffmpeg === ffmpeg) {
+                this.stopCurrentPlayback();
+            }
             throw error;
         }
-        this.resource = createAudioResource(this.ffmpeg.process.stdout, {
-            inputType: StreamType.Raw,
-            inlineVolume: this.options.volume?.enabled === true,
-        });
 
         if (this.options.volume?.enabled === true && this.options.volume.initialPercent !== undefined) {
             this.setVolume(this.options.volume.initialPercent);
         }
 
-        this.audioPlayer.play(this.resource);
-        this.playbackState = 'playing';
+        try {
+            this.audioPlayer.play(this.resource);
+            this.playbackState = 'playing';
+        } catch (error) {
+            this.stopCurrentPlayback();
+            this.playbackState = 'ready';
+            throw error;
+        }
     }
 
     public async start(): Promise<void> {

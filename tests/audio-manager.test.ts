@@ -1,12 +1,14 @@
 import { jest, describe, beforeEach, afterEach, it, expect } from '@jest/globals';
-import { entersState } from '@discordjs/voice';
+import { createAudioResource, entersState, joinVoiceChannel } from '@discordjs/voice';
 import { resolve } from 'node:path';
 import { PassThrough } from 'node:stream';
 
 import AudioManager from '../src/audio-manager';
 import { AudioManagerConfigError, AudioManagerStateError, FfmpegProcessError } from '../src';
 import { startFfmpeg } from '../src/ffmpeg';
+import type { FfmpegProcessHandle } from '../src/ffmpeg';
 import type { AudioSource, VoiceConnectionOptions } from '../src';
+import type { VoiceConnection } from '@discordjs/voice';
 
 const mockAudioPlayer = {
     play: jest.fn(),
@@ -19,6 +21,13 @@ const mockConnection = {
     disconnect: jest.fn(),
     destroy: jest.fn(),
 };
+const mockSecondConnection = {
+    subscribe: jest.fn(),
+    disconnect: jest.fn(),
+    destroy: jest.fn(),
+};
+const mockVoiceConnection = mockConnection as unknown as VoiceConnection;
+const mockSecondVoiceConnection = mockSecondConnection as unknown as VoiceConnection;
 const mockAudioResource = {
     playStream: {
         destroy: jest.fn(),
@@ -27,10 +36,10 @@ const mockAudioResource = {
         setVolume: jest.fn(),
     },
 };
-const mockFfmpegHandle = {
+const mockFfmpegHandle: FfmpegProcessHandle = {
     process: {
         stdout: new PassThrough(),
-    },
+    } as unknown as FfmpegProcessHandle['process'],
     ready: Promise.resolve(),
     stop: jest.fn(),
 };
@@ -47,8 +56,8 @@ jest.mock('@discordjs/voice', () => ({
     },
     createAudioPlayer: jest.fn(() => mockAudioPlayer),
     createAudioResource: jest.fn(() => mockAudioResource),
-    entersState: jest.fn(() => Promise.resolve(mockConnection)),
-    joinVoiceChannel: jest.fn(() => mockConnection),
+    entersState: jest.fn(() => Promise.resolve(mockVoiceConnection)),
+    joinVoiceChannel: jest.fn(() => mockVoiceConnection),
 }));
 
 jest.mock('../src/ffmpeg', () => ({
@@ -68,6 +77,26 @@ const liveStreamSource: AudioSource = {
 
 const fileSourcePath = 'tests/audio.mp3';
 const resolvedFileSourcePath = resolve(process.cwd(), fileSourcePath);
+type MockedEntersStateReturn = ReturnType<typeof entersState>;
+
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
+    let resolve!: (value: T) => void;
+    const promise = new Promise<T>((promiseResolve) => {
+        resolve = promiseResolve;
+    });
+
+    return { promise, resolve };
+}
+
+function createMockFfmpegHandle(): FfmpegProcessHandle {
+    return {
+        process: {
+            stdout: new PassThrough(),
+        } as unknown as FfmpegProcessHandle['process'],
+        ready: Promise.resolve(),
+        stop: jest.fn(),
+    };
+}
 
 describe('AudioManager', () => {
     beforeEach(() => {
@@ -117,6 +146,73 @@ describe('AudioManager', () => {
         expect(mockConnection.subscribe).toHaveBeenCalledWith(mockAudioPlayer);
         expect(mockConnection.destroy).toHaveBeenCalledTimes(1);
         expect(jest.getTimerCount()).toBe(0);
+    });
+
+    it('does not become ready when stopped during connection startup', async () => {
+        jest.useFakeTimers();
+        const ready = deferred<VoiceConnection>();
+        jest.mocked(entersState).mockReturnValueOnce(ready.promise as unknown as MockedEntersStateReturn);
+        const manager = new AudioManager({
+            connection: connectionOptions,
+            renewIntervalMs: 10_000,
+        });
+
+        const connectPromise = manager.connect();
+        await manager.stop();
+        ready.resolve(mockVoiceConnection);
+
+        await expect(connectPromise).rejects.toThrow(AudioManagerStateError);
+
+        expect(manager.state).toBe('stopped');
+        expect(manager.isConnected).toBe(false);
+        expect(jest.getTimerCount()).toBe(0);
+    });
+
+    it('keeps the latest connection when concurrent connects resolve out of order', async () => {
+        const firstReady = deferred<VoiceConnection>();
+        const secondReady = deferred<VoiceConnection>();
+        jest.mocked(joinVoiceChannel)
+            .mockReturnValueOnce(mockVoiceConnection)
+            .mockReturnValueOnce(mockSecondVoiceConnection);
+        jest.mocked(entersState)
+            .mockReturnValueOnce(firstReady.promise as unknown as MockedEntersStateReturn)
+            .mockReturnValueOnce(secondReady.promise as unknown as MockedEntersStateReturn);
+        const manager = new AudioManager({
+            connection: connectionOptions,
+            renewIntervalMs: false,
+        });
+
+        const firstConnect = manager.connect();
+        const secondConnect = manager.connect();
+        firstReady.resolve(mockVoiceConnection);
+        secondReady.resolve(mockSecondVoiceConnection);
+
+        await expect(firstConnect).rejects.toThrow(AudioManagerStateError);
+        await expect(secondConnect).resolves.toBeUndefined();
+
+        expect(manager.state).toBe('ready');
+        expect(manager.isConnected).toBe(true);
+        expect(mockConnection.destroy).toHaveBeenCalledTimes(1);
+        expect(mockSecondConnection.destroy).not.toHaveBeenCalled();
+    });
+
+    it('does not become ready when disposed during connection startup', async () => {
+        const ready = deferred<VoiceConnection>();
+        jest.mocked(entersState).mockReturnValueOnce(ready.promise as unknown as MockedEntersStateReturn);
+        const manager = new AudioManager({
+            connection: connectionOptions,
+            renewIntervalMs: false,
+        });
+
+        const connectPromise = manager.connect();
+        manager.dispose();
+        ready.resolve(mockVoiceConnection);
+
+        await expect(connectPromise).rejects.toThrow(AudioManagerStateError);
+
+        expect(manager.state).toBe('disposed');
+        expect(manager.isConnected).toBe(false);
+        expect(mockConnection.destroy).toHaveBeenCalledTimes(1);
     });
 
     it('starts playback with the committed mp3 test file', async () => {
@@ -182,6 +278,118 @@ describe('AudioManager', () => {
         expect(manager.state).toBe('ready');
         expect(mockAudioPlayer.play).not.toHaveBeenCalled();
         expect(mockFfmpegHandle.stop).toHaveBeenCalledTimes(1);
+    });
+
+    it('cleans up when audio resource creation fails', async () => {
+        const resourceError = new Error('resource failed');
+        jest.mocked(createAudioResource).mockImplementationOnce(() => {
+            throw resourceError;
+        });
+        const manager = new AudioManager({
+            connection: connectionOptions,
+            source: liveStreamSource,
+            renewIntervalMs: false,
+        });
+
+        await manager.connect();
+        await expect(manager.play()).rejects.toBe(resourceError);
+
+        expect(manager.state).toBe('ready');
+        expect(mockFfmpegHandle.stop).toHaveBeenCalledTimes(1);
+        expect(mockAudioPlayer.play).not.toHaveBeenCalled();
+    });
+
+    it('cleans up when the audio player rejects playback', async () => {
+        const playerError = new Error('player failed');
+        mockAudioPlayer.play.mockImplementationOnce(() => {
+            throw playerError;
+        });
+        const manager = new AudioManager({
+            connection: connectionOptions,
+            source: liveStreamSource,
+            renewIntervalMs: false,
+        });
+
+        await manager.connect();
+        await expect(manager.play()).rejects.toBe(playerError);
+
+        expect(manager.state).toBe('ready');
+        expect(mockFfmpegHandle.stop).toHaveBeenCalledTimes(1);
+        expect(mockAudioResource.playStream.destroy).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not report playback when stopped before ffmpeg is ready', async () => {
+        const ready = deferred<void>();
+        jest.mocked(startFfmpeg).mockReturnValueOnce({
+            ...mockFfmpegHandle,
+            ready: ready.promise,
+        });
+        const manager = new AudioManager({
+            connection: connectionOptions,
+            source: liveStreamSource,
+            renewIntervalMs: false,
+        });
+
+        await manager.connect();
+        const playPromise = manager.play();
+        await manager.stop();
+        ready.resolve();
+
+        await expect(playPromise).rejects.toThrow(AudioManagerStateError);
+
+        expect(manager.state).toBe('stopped');
+        expect(mockAudioPlayer.play).not.toHaveBeenCalled();
+    });
+
+    it('does not report playback when disposed before ffmpeg is ready', async () => {
+        const ready = deferred<void>();
+        jest.mocked(startFfmpeg).mockReturnValueOnce({
+            ...mockFfmpegHandle,
+            ready: ready.promise,
+        });
+        const manager = new AudioManager({
+            connection: connectionOptions,
+            source: liveStreamSource,
+            renewIntervalMs: false,
+        });
+
+        await manager.connect();
+        const playPromise = manager.play();
+        manager.dispose();
+        ready.resolve();
+
+        await expect(playPromise).rejects.toThrow(AudioManagerStateError);
+
+        expect(manager.state).toBe('disposed');
+        expect(mockAudioPlayer.play).not.toHaveBeenCalled();
+    });
+
+    it('keeps only the latest concurrent playback', async () => {
+        const firstReady = deferred<void>();
+        const firstHandle = {
+            ...createMockFfmpegHandle(),
+            ready: firstReady.promise,
+        };
+        const secondHandle = createMockFfmpegHandle();
+        jest.mocked(startFfmpeg).mockReturnValueOnce(firstHandle).mockReturnValueOnce(secondHandle);
+        const manager = new AudioManager({
+            connection: connectionOptions,
+            source: liveStreamSource,
+            renewIntervalMs: false,
+        });
+
+        await manager.connect();
+        const firstPlay = manager.play();
+        const secondPlay = manager.play({ type: 'file', path: fileSourcePath });
+        firstReady.resolve();
+
+        await expect(firstPlay).rejects.toThrow(AudioManagerStateError);
+        await expect(secondPlay).resolves.toBeUndefined();
+
+        expect(manager.state).toBe('playing');
+        expect(mockAudioPlayer.play).toHaveBeenCalledTimes(1);
+        expect(firstHandle.stop).toHaveBeenCalledTimes(1);
+        expect(secondHandle.stop).not.toHaveBeenCalled();
     });
 
     it('replaces active playback when a new source is played', async () => {
@@ -277,6 +485,7 @@ describe('AudioManager', () => {
         expect(() => manager.setVolume(Number.POSITIVE_INFINITY)).toThrow(AudioManagerConfigError);
         expect(() => manager.setVolume(Number.NEGATIVE_INFINITY)).toThrow(AudioManagerConfigError);
         expect(() => manager.setVolume(0)).not.toThrow();
+        expect(() => manager.setVolume(42)).not.toThrow();
         expect(() => manager.setVolume(100)).not.toThrow();
     });
 
@@ -324,6 +533,20 @@ describe('AudioManager', () => {
         expect(mockAudioResource.playStream.destroy).toHaveBeenCalledTimes(1);
         expect(mockConnection.destroy).toHaveBeenCalled();
         expect(manager.state).toBe('stopped');
+    });
+
+    it('rejects pause and resume after stop', async () => {
+        const manager = new AudioManager({
+            connection: connectionOptions,
+            source: liveStreamSource,
+            renewIntervalMs: false,
+        });
+
+        await manager.start();
+        await manager.stop();
+
+        expect(() => manager.pause()).toThrow(AudioManagerStateError);
+        expect(() => manager.resume()).toThrow(AudioManagerStateError);
     });
 
     it('restarts playback when the renewal timer fires', async () => {
