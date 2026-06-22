@@ -298,6 +298,27 @@ describe('AudioManager', () => {
         expect(startSpy).toHaveBeenCalledTimes(1);
     });
 
+    it('cleans up when renewal restart fails', async () => {
+        jest.useFakeTimers();
+
+        const manager = new AudioManager({
+            connection: connectionOptions,
+            source: liveStreamSource,
+            renewIntervalMs: 10_000,
+        });
+        const startSpy = jest.spyOn(manager, 'start').mockRejectedValue(new Error('renewal failed'));
+
+        await manager.connect();
+        jest.advanceTimersByTime(10_000);
+        await Promise.resolve();
+
+        expect(startSpy).toHaveBeenCalledTimes(1);
+        expect(mockAudioPlayer.stop).toHaveBeenCalledWith(true);
+        expect(mockConnection.destroy).toHaveBeenCalled();
+        expect(manager.state).toBe('stopped');
+        expect(jest.getTimerCount()).toBe(0);
+    });
+
     it('clears existing renewal timer before reconnecting', async () => {
         jest.useFakeTimers();
 

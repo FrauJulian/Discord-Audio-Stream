@@ -227,7 +227,15 @@ export default class AudioManager {
         }
 
         this.renewTimer = setTimeout(() => {
-            void this.start();
+            void this.start().catch(() => {
+                this.clearRenewTimer();
+                this.stopCurrentPlayback();
+                this.audioPlayer.stop(true);
+                this.connection?.disconnect();
+                this.connection?.destroy();
+                this.connection = undefined;
+                this.playbackState = 'stopped';
+            });
         }, renewIntervalMs);
 
         if (typeof this.renewTimer.unref === 'function') {
