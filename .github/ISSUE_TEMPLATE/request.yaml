@@ -1,6 +1,6 @@
-name: 💡 Enhancement
-description: Suggest a new feature
-title: '💡 [Enhancement]: '
+name: 📝 Service Request
+description: Request a service or support task
+title: '📝 [Service Request]: '
 body:
     - type: textarea
       id: information

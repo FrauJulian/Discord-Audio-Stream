@@ -1,39 +1,21 @@
 name: ⚙️ Improvement
-description: Suggest an improvement to existing functionality, code quality, or performance
+description: Suggest an improvement to existing functionality
 title: '⚙️ [Improvement]: '
 body:
     - type: textarea
-      id: context
+      id: information
       attributes:
-          label: Current Situation / Context
-          description: Describe the current behavior or implementation that could be improved.
-          placeholder: 'Currently, the system loads all users at once, which slows down response time.'
+          label: Description
+          description: Provide all information.
+          placeholder: 'What happened? What did you expect to happen?'
       validations:
           required: false
 
     - type: textarea
-      id: proposal
+      id: criteria
       attributes:
-          label: Proposed Improvement
-          description: Describe your proposed change or improvement in detail.
-          placeholder: 'Implement pagination for user loading to reduce memory usage and response time.'
+          label: Acceptance Criteria
+          description: What are the expectations?
+          placeholder: 'How do you want it implemented? How should it be tested?'
       validations:
           required: false
-
-    - type: textarea
-      id: benefits
-      attributes:
-          label: Expected Benefits
-          description: Explain how this improvement will help (e.g., better performance, cleaner code, easier maintenance).
-          placeholder: 'Faster load times, improved scalability, and reduced database load.'
-      validations:
-          required: false
-
-    - type: input
-      id: implementation
-      attributes:
-          label: Implementation Version
-          description: Specify in which version the improvement should be released.
-          placeholder: 'v0.1'
-      validations:
-          required: true
