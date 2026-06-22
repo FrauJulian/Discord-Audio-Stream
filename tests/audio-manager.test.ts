@@ -273,6 +273,11 @@ describe('AudioManager', () => {
 
         expect(() => manager.setVolume(-1)).toThrow(AudioManagerConfigError);
         expect(() => manager.setVolume(101)).toThrow(AudioManagerConfigError);
+        expect(() => manager.setVolume(Number.NaN)).toThrow(AudioManagerConfigError);
+        expect(() => manager.setVolume(Number.POSITIVE_INFINITY)).toThrow(AudioManagerConfigError);
+        expect(() => manager.setVolume(Number.NEGATIVE_INFINITY)).toThrow(AudioManagerConfigError);
+        expect(() => manager.setVolume(0)).not.toThrow();
+        expect(() => manager.setVolume(100)).not.toThrow();
     });
 
     it('rejects volume changes before any resource exists', () => {

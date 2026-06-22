@@ -182,7 +182,7 @@ export default class AudioManager {
             throw new AudioManagerStateError('Volume control requires volume.enabled to be true.');
         }
 
-        if (volumeInPercent < 0 || volumeInPercent > 100) {
+        if (!Number.isFinite(volumeInPercent) || volumeInPercent < 0 || volumeInPercent > 100) {
             throw new AudioManagerConfigError('Volume must be between 0 and 100 percent.');
         }
 
