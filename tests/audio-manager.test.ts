@@ -1,4 +1,5 @@
 import { jest, describe, beforeEach, afterEach, it, expect } from '@jest/globals';
+import { entersState } from '@discordjs/voice';
 import { resolve } from 'node:path';
 import { PassThrough } from 'node:stream';
 
@@ -97,6 +98,24 @@ describe('AudioManager', () => {
         expect(mockConnection.subscribe).toHaveBeenCalledWith(mockAudioPlayer);
         expect(startFfmpeg).toHaveBeenCalledWith('https://synradiode.stream.laut.fm/synradiode', undefined);
         expect(mockAudioPlayer.play).toHaveBeenCalledWith(mockAudioResource);
+    });
+
+    it('keeps failed connection startup observable', async () => {
+        jest.useFakeTimers();
+
+        const manager = new AudioManager({
+            connection: connectionOptions,
+            renewIntervalMs: 10_000,
+        });
+        jest.mocked(entersState).mockRejectedValueOnce(new Error('voice connection timeout'));
+
+        await expect(manager.connect()).rejects.toThrow('voice connection timeout');
+
+        expect(manager.state).toBe('connecting');
+        expect(manager.isConnected).toBe(true);
+        expect(mockConnection.subscribe).toHaveBeenCalledWith(mockAudioPlayer);
+        expect(mockConnection.destroy).not.toHaveBeenCalled();
+        expect(jest.getTimerCount()).toBe(0);
     });
 
     it('starts playback with the committed mp3 test file', async () => {
