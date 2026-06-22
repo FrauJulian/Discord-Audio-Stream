@@ -4,38 +4,33 @@
 ![latest release](https://img.shields.io/badge/dynamic/json?label=release&query=$.name&url=https%3A%2F%2Fapi.github.com%2Frepos%2FFrauJulian%2Fdiscord-audio-stream%2Freleases%2Flatest&color=blue)
 ![GitHub Repo stars](https://img.shields.io/github/stars/FrauJulian/discord-audio-stream?style=social)
 
-> **Designed for 24/7 Discord audio playback.**  
-> `discord-audio-stream` is a small TypeScript library for managed Discord voice playback through
-> `@discordjs/voice` and ffmpeg.
+`discord-audio-stream` is a small TypeScript library for managed Discord voice playback through
+`@discordjs/voice` and ffmpeg.
 
-Discord voice streams need careful lifecycle handling. This package manages the voice connection, ffmpeg process,
-raw PCM resource creation, optional reconnect renewal, and predictable cleanup so your bot code stays small and readable.
+It manages the Discord voice connection, ffmpeg process, raw PCM audio resource, optional renewal, and cleanup. Keep one
+`AudioManager` per guild, usually in a `Map<string, AudioManager>`, and call `dispose()` when that manager will not be
+reused.
 
-> **Recommended best practice:**  
-> Keep one `AudioManager` per guild, usually in a `Map<string, AudioManager>`. Update the connection or source through
-> `setConnection()` and `setSource()`, then call `start()`. When playback stops, call `stop()`. When the manager will not
-> be reused, call `dispose()` to release timers, streams, ffmpeg, and the voice connection.
+## Support
 
-> **For large bots:**  
-> Queue many simultaneous starts, for example with [`p-queue`](https://www.npmjs.com/package/p-queue), so the host does
-> not spawn too many ffmpeg processes in the same tick.
-
-## 👋 Support
-
-Please create an [issue](https://github.com/FrauJulian/Discord-Audio-Stream/issues) on GitHub or contact
+Create an [issue](https://github.com/FrauJulian/Discord-Audio-Stream/issues) on GitHub or contact
 [`fraujulian`](https://discord.com/users/860206216893693973) on Discord.
 
-## 📝 Usage
+## Installation
 
-### Installation
-
-**Node.js `22.22.3` or newer is required.**
-
-Install the library and the required voice packages:
+Node.js `22.22.3` or newer is required.
 
 ```bash
 npm install discord-audio-stream @discordjs/voice prism-media @snazzah/davey opusscript
 ```
+
+`ffmpeg` must be available either on the host PATH or through the optional `ffmpeg-static` package:
+
+```bash
+npm install ffmpeg-static
+```
+
+Use `ffmpeg.mode: 'native'` for PATH-based ffmpeg and `ffmpeg.mode: 'static'` for `ffmpeg-static`.
 
 `libsodium-wrappers` is optional. Install it only when your runtime does not support `aes-256-gcm`:
 
@@ -44,15 +39,7 @@ node -e "console.log(require('node:crypto').getCiphers().includes('aes-256-gcm')
 npm install libsodium-wrappers
 ```
 
-For bundled ffmpeg support, install `ffmpeg-static` and use `ffmpeg.mode: 'static'`:
-
-```bash
-npm install ffmpeg-static
-```
-
-If ffmpeg is already available on the host PATH, use `ffmpeg.mode: 'native'`.
-
-### AudioManager Example
+## Basic Usage
 
 ```ts
 import { AudioManager } from 'discord-audio-stream';
@@ -70,7 +57,6 @@ const manager = new AudioManager({
     ffmpeg: {
         mode: 'native',
     },
-    renewIntervalMs: 5_400_000,
 });
 
 await manager.start();
@@ -89,9 +75,25 @@ await manager.start();
 
 Relative file paths are resolved from `process.cwd()`. URL sources are validated before playback starts.
 
-## ⚙️ API
+For large bots, queue many simultaneous starts so the host does not spawn too many ffmpeg processes in the same tick.
 
-### Constructor
+## Lifecycle
+
+```ts
+manager.setConnection(connectionOptions);
+manager.setSource(source);
+
+await manager.start(); // connect() + play()
+manager.pause();
+manager.resume();
+await manager.stop(); // stops playback and destroys the voice connection
+manager.dispose(); // final cleanup; the manager cannot be reused
+```
+
+`connect()` joins the configured voice channel. `play(source?)` starts playback on an existing connection. Use `start()`
+when you want both.
+
+## API
 
 ```ts
 type AudioManagerOptions = {
@@ -148,11 +150,9 @@ manager.isPlaying;
 manager.isConnected;
 ```
 
-## 🔊 Audio Options
+## Audio Options
 
-### Volume
-
-Inline volume has a runtime cost in `@discordjs/voice`, so it is disabled by default.
+Inline volume has runtime cost in `@discordjs/voice`, so it is disabled by default.
 
 ```ts
 const manager = new AudioManager({
@@ -170,33 +170,15 @@ manager.setVolume(25);
 
 Calling `setVolume()` without `volume.enabled: true` throws `AudioManagerStateError`.
 
-### ffmpeg Modes
-
-- `mode: 'native'` uses the `ffmpeg` executable from the host environment.
-- `mode: 'static'` resolves the optional `ffmpeg-static` package.
-- `executablePath` overrides both modes and is useful for Docker images or custom ffmpeg builds.
-
-Default output is raw Discord-compatible PCM: `s16le`, `48000 Hz`, `2 channels`.
+Default ffmpeg output is raw Discord-compatible PCM: `s16le`, `48000 Hz`, `2 channels`.
 
 You can override ffmpeg arguments through `ffmpeg.inputArgs` and `ffmpeg.outputArgs`. When you override them, you are
 responsible for keeping the output compatible with `StreamType.Raw`.
 
-### Renewal
-
 By default, the manager schedules a renewal after `5_400_000 ms` so long-running streams can reconnect periodically.
-Set `renewIntervalMs: false` to disable this behavior:
+Set `renewIntervalMs: false` to disable it. `stop()` and `dispose()` always clear the renewal timer.
 
-```ts
-const manager = new AudioManager({
-    connection,
-    source,
-    renewIntervalMs: false,
-});
-```
-
-`stop()` and `dispose()` always clear the renewal timer.
-
-## 🧯 Errors
+## Errors
 
 The package exports these error classes:
 
@@ -208,7 +190,7 @@ The package exports these error classes:
 Configuration problems, such as a missing source or invalid URL, throw `AudioManagerConfigError`. Invalid lifecycle
 operations, such as calling `pause()` while nothing is playing, throw `AudioManagerStateError`.
 
-## 🧑‍💻 Development
+## Development
 
 ```bash
 npm ci
@@ -216,10 +198,10 @@ npm run check
 npm run build
 ```
 
-## 📋 Contributors
+## Contributors
 
 ~ [**FrauJulian - Julian Lechner**](https://fraujulian.xyz/) - CODEOWNER
 
-## 🤝 Enjoy the package?
+## Enjoy the package?
 
-Give it a star ⭐ on [GitHub](https://github.com/FrauJulian/discord-audio-stream)!
+Give it a star on [GitHub](https://github.com/FrauJulian/discord-audio-stream)!
