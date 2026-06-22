@@ -89,7 +89,14 @@ export default class AudioManager {
         });
         this.connection.subscribe(this.audioPlayer);
 
-        await entersState(this.connection, VoiceConnectionStatus.Ready, this.options.connectTimeoutMs);
+        try {
+            await entersState(this.connection, VoiceConnectionStatus.Ready, this.options.connectTimeoutMs);
+        } catch (error) {
+            this.connection.destroy();
+            this.connection = undefined;
+            this.playbackState = 'stopped';
+            throw error;
+        }
         this.playbackState = 'ready';
         this.scheduleRenewal();
     }

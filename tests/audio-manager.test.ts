@@ -101,7 +101,7 @@ describe('AudioManager', () => {
         expect(mockAudioPlayer.play).toHaveBeenCalledWith(mockAudioResource);
     });
 
-    it('keeps failed connection startup observable', async () => {
+    it('cleans up when connection startup fails', async () => {
         jest.useFakeTimers();
 
         const manager = new AudioManager({
@@ -112,10 +112,10 @@ describe('AudioManager', () => {
 
         await expect(manager.connect()).rejects.toThrow('voice connection timeout');
 
-        expect(manager.state).toBe('connecting');
-        expect(manager.isConnected).toBe(true);
+        expect(manager.state).toBe('stopped');
+        expect(manager.isConnected).toBe(false);
         expect(mockConnection.subscribe).toHaveBeenCalledWith(mockAudioPlayer);
-        expect(mockConnection.destroy).not.toHaveBeenCalled();
+        expect(mockConnection.destroy).toHaveBeenCalledTimes(1);
         expect(jest.getTimerCount()).toBe(0);
     });
 
