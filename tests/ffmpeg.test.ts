@@ -1,6 +1,7 @@
 import { jest, describe, beforeEach, afterEach, it, expect } from '@jest/globals';
 import { spawn } from 'node:child_process';
 
+import { FfmpegProcessError } from '../src';
 import { resolveFfmpegExecutable, startFfmpeg } from '../src/ffmpeg';
 
 jest.mock('node:child_process', () => ({
@@ -12,12 +13,16 @@ const mockSpawn = jest.mocked(spawn);
 type MockChildProcess = {
     stdout: {
         destroy: jest.Mock;
+        once: jest.Mock;
+        off: jest.Mock;
     };
     stderr: {
         destroy: jest.Mock;
+        on: jest.Mock;
         resume: jest.Mock;
     };
     once: jest.Mock;
+    off: jest.Mock;
     removeAllListeners: jest.Mock;
     kill: jest.Mock;
     killed: boolean;
@@ -29,12 +34,16 @@ function createMockChildProcess(): MockChildProcess {
     return {
         stdout: {
             destroy: jest.fn(),
+            once: jest.fn(),
+            off: jest.fn(),
         },
         stderr: {
             destroy: jest.fn(),
+            on: jest.fn(),
             resume: jest.fn(),
         },
         once: jest.fn(),
+        off: jest.fn(),
         removeAllListeners: jest.fn(),
         kill: jest.fn(),
         killed: false,
@@ -88,7 +97,37 @@ describe('ffmpeg helpers', () => {
             { stdio: ['ignore', 'pipe', 'pipe'] },
         );
         expect(childProcess.once).toHaveBeenCalledWith('error', expect.any(Function));
+        expect(childProcess.once).toHaveBeenCalledWith('exit', expect.any(Function));
+        expect(childProcess.stdout.once).toHaveBeenCalledWith('readable', expect.any(Function));
+        expect(childProcess.stderr.on).toHaveBeenCalledWith('data', expect.any(Function));
         expect(childProcess.stderr.resume).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects readiness when ffmpeg startup emits an error', async () => {
+        const childProcess = createMockChildProcess();
+        mockSpawn.mockReturnValue(childProcess);
+
+        const handle = startFfmpeg('tests/audio.mp3');
+        const errorHandler = childProcess.once.mock.calls.find(([event]) => event === 'error')?.[1];
+
+        errorHandler(new Error('spawn ENOENT'));
+
+        await expect(handle.ready).rejects.toThrow(FfmpegProcessError);
+        await expect(handle.ready).rejects.toThrow('spawn ENOENT');
+    });
+
+    it('includes stderr when ffmpeg exits before producing audio', async () => {
+        const childProcess = createMockChildProcess();
+        mockSpawn.mockReturnValue(childProcess);
+
+        const handle = startFfmpeg('tests/audio.mp3');
+        const stderrHandler = childProcess.stderr.on.mock.calls.find(([event]) => event === 'data')?.[1];
+        const exitHandler = childProcess.once.mock.calls.find(([event]) => event === 'exit')?.[1];
+
+        stderrHandler('invalid input');
+        exitHandler(1, null);
+
+        await expect(handle.ready).rejects.toThrow('invalid input');
     });
 
     it('uses custom executable and argument overrides when provided', () => {

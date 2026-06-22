@@ -108,6 +108,12 @@ export default class AudioManager {
         const resolvedSource = this.resolveSource();
         this.stopCurrentPlayback();
         this.ffmpeg = startFfmpeg(resolvedSource.input, this.options.ffmpeg);
+        try {
+            await this.ffmpeg.ready;
+        } catch (error) {
+            this.stopCurrentPlayback();
+            throw error;
+        }
         this.resource = createAudioResource(this.ffmpeg.process.stdout, {
             inputType: StreamType.Raw,
             inlineVolume: this.options.volume?.enabled === true,

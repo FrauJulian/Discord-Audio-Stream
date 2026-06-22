@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { PassThrough } from 'node:stream';
 
 import AudioManager from '../src/audio-manager';
-import { AudioManagerConfigError, AudioManagerStateError } from '../src';
+import { AudioManagerConfigError, AudioManagerStateError, FfmpegProcessError } from '../src';
 import { startFfmpeg } from '../src/ffmpeg';
 import type { AudioSource, VoiceConnectionOptions } from '../src';
 
@@ -31,6 +31,7 @@ const mockFfmpegHandle = {
     process: {
         stdout: new PassThrough(),
     },
+    ready: Promise.resolve(),
     stop: jest.fn(),
 };
 
@@ -161,6 +162,26 @@ describe('AudioManager', () => {
 
         expect(startFfmpeg).toHaveBeenCalledWith(resolvedFileSourcePath, undefined);
         expect(manager.state).toBe('playing');
+    });
+
+    it('does not report playback when ffmpeg startup fails', async () => {
+        const startupError = new FfmpegProcessError('Unable to start ffmpeg.');
+        jest.mocked(startFfmpeg).mockReturnValueOnce({
+            ...mockFfmpegHandle,
+            ready: Promise.reject(startupError),
+        });
+        const manager = new AudioManager({
+            connection: connectionOptions,
+            source: liveStreamSource,
+            renewIntervalMs: false,
+        });
+
+        await manager.connect();
+        await expect(manager.play()).rejects.toBe(startupError);
+
+        expect(manager.state).toBe('ready');
+        expect(mockAudioPlayer.play).not.toHaveBeenCalled();
+        expect(mockFfmpegHandle.stop).toHaveBeenCalledTimes(1);
     });
 
     it('replaces active playback when a new source is played', async () => {
