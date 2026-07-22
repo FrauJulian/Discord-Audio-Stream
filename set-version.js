@@ -76,7 +76,7 @@ function fixPlaceholder() {
 function getCiVersion() {
     const major = process.env.VERSION_MAJOR;
     const minor = process.env.VERSION_MINOR;
-    const patch = process.env.VERSION_PATCH ?? process.env.GITHUB_RUN_NUMBER;
+    const patch = process.env.VERSION_PATCH;
     const segments = { major, minor, patch };
 
     for (const [name, value] of Object.entries(segments)) {

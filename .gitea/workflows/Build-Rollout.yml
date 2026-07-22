@@ -9,6 +9,7 @@ permissions:
 env:
     VERSION_MAJOR: '1'
     VERSION_MINOR: '1'
+    VERSION_PATCH: ${{ gitea.run_number }}
 
 jobs:
     build:
@@ -39,7 +40,7 @@ jobs:
               id: release_version
               run: |
                   package_version="$(node -p "require('./package.json').version")"
-                  echo "tag=${package_version}" >> "$GITHUB_OUTPUT"
+                  echo "tag=${package_version}" >> "$GITEA_OUTPUT"
 
             - name: Run Build
               run: npm run build
@@ -49,24 +50,29 @@ jobs:
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-            - name: Create GitHub release
+            - name: Create Gitea release
               env:
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+                  GITEA_API_URL: ${{ gitea.api_url }}
+                  GITEA_REPOSITORY: ${{ gitea.repository }}
+                  GITEA_SERVER_URL: ${{ gitea.server_url }}
+                  GITEA_SHA: ${{ gitea.sha }}
                   RELEASE_TAG: v${{ steps.release_version.outputs.tag }}
               run: |
                   git fetch --force --tags
 
-                  previous_tag="$(gh api repos/${{ github.repository }}/releases --paginate --jq '.[] | select(.draft == false) | .tag_name' | grep -Fxv "$RELEASE_TAG" | head -n 1 || true)"
+                  releases_url="${GITEA_API_URL}/repos/${GITEA_REPOSITORY}/releases"
+                  previous_tag="$(curl --fail --silent --show-error --header "Authorization: token ${GITEA_TOKEN}" "${releases_url}?limit=50" | jq -r --arg tag "$RELEASE_TAG" '[.[] | select(.draft == false and .tag_name != $tag)][0].tag_name // empty')"
 
                   if [ -n "$previous_tag" ]; then
                       if git rev-parse --verify --quiet "${previous_tag}^{commit}" >/dev/null; then
-                          commit_messages="$(git log --reverse --format='- %s' "${previous_tag}..${GITHUB_SHA}")"
+                          commit_messages="$(git log --reverse --format='- %s' "${previous_tag}..${GITEA_SHA}")"
                       else
-                          commit_messages="$(git log --reverse --format='- %s' "${GITHUB_SHA}")"
+                          commit_messages="$(git log --reverse --format='- %s' "${GITEA_SHA}")"
                       fi
-                      full_changelog="https://github.com/${{ github.repository }}/compare/${previous_tag}...${RELEASE_TAG}"
+                      full_changelog="${GITEA_SERVER_URL}/${GITEA_REPOSITORY}/compare/${previous_tag}...${RELEASE_TAG}"
                   else
-                      commit_messages="$(git log --reverse --format='- %s' "${GITHUB_SHA}")"
+                      commit_messages="$(git log --reverse --format='- %s' "${GITEA_SHA}")"
                       full_changelog=""
                   fi
 
@@ -84,8 +90,13 @@ jobs:
                       fi
                   } > release-notes.md
 
-                  if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-                      gh release edit "$RELEASE_TAG" --title "$RELEASE_TAG" --notes-file release-notes.md
+                  jq -n --arg tag "$RELEASE_TAG" --arg target "$GITEA_SHA" --rawfile body release-notes.md \
+                      '{tag_name: $tag, target_commitish: $target, name: $tag, body: $body, draft: false, prerelease: false}' > release.json
+
+                  release_id="$(curl --silent --header "Authorization: token ${GITEA_TOKEN}" "${releases_url}/tags/${RELEASE_TAG}" | jq -r '.id // empty')"
+
+                  if [ -n "$release_id" ]; then
+                      curl --fail-with-body --request PATCH --header "Authorization: token ${GITEA_TOKEN}" --header 'Content-Type: application/json' --data @release.json "${releases_url}/${release_id}"
                   else
-                      gh release create "$RELEASE_TAG" --target "${GITHUB_SHA}" --title "$RELEASE_TAG" --notes-file release-notes.md
+                      curl --fail-with-body --request POST --header "Authorization: token ${GITEA_TOKEN}" --header 'Content-Type: application/json' --data @release.json "$releases_url"
                   fi
