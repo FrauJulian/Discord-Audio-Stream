@@ -43,9 +43,9 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/FrauJulian/Discord-Audio-Stream.git"
+        "url": "git+https://git.lechner-systems.at/FrauJulian/Discord-Audio-Stream.git"
     },
-    "bugs": "https://github.com/FrauJulian/Discord-Audio-Stream/issues",
+    "bugs": "https://git.lechner-systems.at/FrauJulian/Discord-Audio-Stream/issues",
     "funding": "https://ko-fi.com/FrauJulian",
     "keywords": [
         "discord",
