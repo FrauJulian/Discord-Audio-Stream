@@ -14,7 +14,7 @@ If a vulnerability is fixed, the fix will generally be released only for the cur
 
 ## Reporting a Vulnerability
 
-Do not open a public GitHub issue for security vulnerabilities.
+Do not open a public Gitea issue for security vulnerabilities.
 
 Report vulnerabilities privately by email to `fraujulian@lechner.top`.
 

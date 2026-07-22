@@ -1,8 +1,8 @@
 # Discord Audio Stream
 
 [![npm](https://img.shields.io/npm/dw/discord-audio-stream)](http://npmjs.org/package/discord-audio-stream)
-![latest release](https://img.shields.io/badge/dynamic/json?label=release&query=$.name&url=https%3A%2F%2Fapi.github.com%2Frepos%2FFrauJulian%2Fdiscord-audio-stream%2Freleases%2Flatest&color=blue)
-![GitHub Repo stars](https://img.shields.io/github/stars/FrauJulian/discord-audio-stream?style=social)
+![latest release](https://img.shields.io/gitea/v/release/FrauJulian/Discord-Audio-Stream?gitea_url=https%3A%2F%2Fgit.lechner-systems.at&color=blue)
+![Gitea Repo stars](https://img.shields.io/gitea/stars/FrauJulian/Discord-Audio-Stream?gitea_url=https%3A%2F%2Fgit.lechner-systems.at&style=social)
 
 `discord-audio-stream` is a small TypeScript library for managed Discord voice playback through
 `@discordjs/voice` and ffmpeg.
@@ -13,7 +13,7 @@ reused.
 
 ## Support
 
-Create an [issue](https://github.com/FrauJulian/Discord-Audio-Stream/issues) on GitHub or contact
+Create an [issue](https://git.lechner-systems.at/FrauJulian/Discord-Audio-Stream/issues) on Gitea or contact
 [`fraujulian`](https://discord.com/users/860206216893693973) on Discord.
 
 ## Installation
@@ -204,4 +204,4 @@ npm run build
 
 ## Enjoy the package?
 
-Give it a star on [GitHub](https://github.com/FrauJulian/discord-audio-stream)!
+Give it a star on [Gitea](https://git.lechner-systems.at/FrauJulian/Discord-Audio-Stream)!
