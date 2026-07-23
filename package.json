@@ -87,7 +87,7 @@
         "prettier": "^3.8.4",
         "ts-jest": "^29.4.11",
         "tsup": "^8.5.1",
-        "typescript": "^6.0.3"
+        "typescript": "^7.0.2"
     },
     "peerDependencies": {
         "@discordjs/voice": "^0.19.2",
