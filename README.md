@@ -18,7 +18,7 @@ Create an [issue](https://git.lechner-systems.at/FrauJulian/Discord-Audio-Stream
 
 ## Installation
 
-Node.js `>=24.17.0` and `<25` is required.
+Node.js `>=22.12.0` and `<25` is required.
 
 ```bash
 npm install discord-audio-stream @discordjs/voice @discordjs/opus
