@@ -307,8 +307,13 @@ export default class AudioManager implements Disposable {
 
         if (this.audioSource.type === 'url') {
             try {
+                const url = new URL(this.audioSource.url);
+                if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+                    throw new Error('Unsupported audio source protocol.');
+                }
+
                 return {
-                    input: new URL(this.audioSource.url).toString(),
+                    input: url.toString(),
                     source: this.audioSource,
                 };
             } catch (error) {
