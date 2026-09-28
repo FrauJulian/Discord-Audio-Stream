@@ -151,6 +151,12 @@ export type AudioManagerOptions = {
     renewIntervalMs?: number | false;
 
     /**
+     * Number of full reconnect and playback restart attempts after an unrecoverable disconnect.
+     * Disabled by default. Must be a non-negative safe integer.
+     */
+    reconnectAttempts?: number;
+
+    /**
      * Maximum milliseconds to wait for the Discord voice connection to become ready.
      * Must be an integer from `1` through `2_147_483_647`.
      *

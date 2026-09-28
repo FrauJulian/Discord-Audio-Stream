@@ -48,6 +48,7 @@ export default class AudioManager implements Disposable {
     private connectAttempt: AbortController | undefined;
     private renewTimer: NodeJS.Timeout | undefined;
     private playbackState: PlaybackState = 'idle';
+    private reconnectGeneration = 0;
     private connectionOptions: VoiceConnectionOptions | undefined;
     private audioSource: AudioSource | undefined;
     private readonly options: Required<Pick<AudioManagerOptions, 'connectTimeoutMs'>> &
@@ -59,6 +60,13 @@ export default class AudioManager implements Disposable {
 
         if (typeof options.renewIntervalMs === 'number') {
             assertValidTimerDelay(options.renewIntervalMs, 'renewIntervalMs');
+        }
+
+        if (
+            options.reconnectAttempts !== undefined &&
+            (!Number.isSafeInteger(options.reconnectAttempts) || options.reconnectAttempts < 0)
+        ) {
+            throw new AudioManagerConfigError('reconnectAttempts must be a non-negative safe integer.');
         }
 
         if (options.volume?.initialPercent !== undefined) {
@@ -254,6 +262,7 @@ export default class AudioManager implements Disposable {
             return;
         }
 
+        this.reconnectGeneration += 1;
         this.cancelConnectAttempt();
         this.clearRenewTimer();
         this.stopCurrentPlayback();
@@ -285,6 +294,7 @@ export default class AudioManager implements Disposable {
             return;
         }
 
+        this.reconnectGeneration += 1;
         this.cancelConnectAttempt();
         this.clearRenewTimer();
         this.stopCurrentPlayback();
@@ -366,6 +376,9 @@ export default class AudioManager implements Disposable {
     }
 
     private async handleDisconnectedConnection(connection: VoiceConnection): Promise<void> {
+        const shouldReconnect = this.resource !== undefined && (this.options.reconnectAttempts ?? 0) > 0;
+        const reconnectGeneration = this.reconnectGeneration;
+
         try {
             await Promise.race([
                 entersState(connection, VoiceConnectionStatus.Signalling, DISCONNECT_RECOVERY_TIMEOUT_MS),
@@ -374,6 +387,22 @@ export default class AudioManager implements Disposable {
         } catch (error) {
             if (this.connection !== connection) {
                 return;
+            }
+
+            if (shouldReconnect) {
+                this.clearRenewTimer();
+                for (let attempt = 0; attempt < (this.options.reconnectAttempts ?? 0); attempt += 1) {
+                    try {
+                        await this.start();
+                        return;
+                    } catch (reconnectError) {
+                        error = reconnectError;
+                    }
+
+                    if (this.reconnectGeneration !== reconnectGeneration || this.playbackState === 'disposed') {
+                        return;
+                    }
+                }
             }
 
             this.clearRenewTimer();

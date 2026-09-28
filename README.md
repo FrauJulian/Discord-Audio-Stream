@@ -114,6 +114,7 @@ type AudioManagerOptions = {
     };
     source?: { type: 'url'; url: string } | { type: 'file'; path: string };
     renewIntervalMs?: number | false;
+    reconnectAttempts?: number;
     connectTimeoutMs?: number;
     onError?: (error: Error) => void;
     volume?: {
@@ -124,16 +125,18 @@ type AudioManagerOptions = {
 ```
 
 `connectTimeoutMs` and numeric `renewIntervalMs` values must be whole milliseconds from `1` through `2_147_483_647`.
+`reconnectAttempts` must be a non-negative safe integer. URL sources must use `http:` or `https:`.
 `volume.initialPercent` must be a finite number from `0` through `100` and requires `volume.enabled: true`.
 
 ### Defaults
 
-| Option             | Default    |
-| ------------------ | ---------- |
-| `ffmpeg.mode`      | `'native'` |
-| `connectTimeoutMs` | `20_000`   |
-| `renewIntervalMs`  | `false`    |
-| `volume.enabled`   | `false`    |
+| Option              | Default    |
+| ------------------- | ---------- |
+| `ffmpeg.mode`       | `'native'` |
+| `connectTimeoutMs`  | `20_000`   |
+| `renewIntervalMs`   | `false`    |
+| `reconnectAttempts` | `0`        |
+| `volume.enabled`    | `false`    |
 
 ### Methods
 
@@ -187,6 +190,9 @@ responsible for keeping the output compatible with `StreamType.Raw`.
 Connection renewal is disabled by default because `@discordjs/voice` handles recoverable disconnects. Set
 `renewIntervalMs` only when an application has a measured need for periodic restarts. `stop()` and `dispose()` always
 clear the renewal timer.
+
+After an unrecoverable disconnect, playback stops by default. Set `reconnectAttempts` to retry joining the configured
+voice channel and restarting the current source.
 
 ## Errors
 
