@@ -235,6 +235,28 @@ describe('AudioManager', () => {
         expect(manager.isConnected).toBe(false);
     });
 
+    it('reconnects and restarts playback when configured', async () => {
+        const manager = new AudioManager({
+            connection: connectionOptions,
+            source: liveStreamSource,
+            renewIntervalMs: false,
+            reconnectAttempts: 1,
+        });
+        await manager.start();
+        jest.mocked(entersState)
+            .mockRejectedValueOnce(new Error('disconnect'))
+            .mockRejectedValueOnce(new Error('disconnect'));
+        jest.mocked(joinVoiceChannel).mockReturnValueOnce(mockSecondVoiceConnection);
+        mockConnection.state.status = VoiceConnectionStatus.Disconnected;
+
+        await listenerFor(connectionListeners, VoiceConnectionStatus.Disconnected)();
+
+        expect(joinVoiceChannel).toHaveBeenCalledTimes(2);
+        expect(startFfmpeg).toHaveBeenCalledTimes(2);
+        expect(manager.state).toBe('playing');
+        expect(manager.isConnected).toBe(true);
+    });
+
     it('cleans up when connection startup fails', async () => {
         jest.useFakeTimers();
 
@@ -597,6 +619,18 @@ describe('AudioManager', () => {
         await manager.connect();
 
         await expect(manager.play()).rejects.toThrow(AudioManagerConfigError);
+    });
+
+    it.each(['file:///etc/passwd', 'ftp://example.com/audio.mp3'])('rejects non-HTTP URL source %s', async (url) => {
+        const manager = new AudioManager({
+            connection: connectionOptions,
+            source: { type: 'url', url },
+            renewIntervalMs: false,
+        });
+
+        await manager.connect();
+        await expect(manager.play()).rejects.toThrow(AudioManagerConfigError);
+        expect(startFfmpeg).not.toHaveBeenCalled();
     });
 
     it('applies initial volume only when volume support is enabled', async () => {
