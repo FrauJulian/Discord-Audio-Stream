@@ -1,4 +1,4 @@
-name: Release and Deploy Build
+name: CD
 
 on:
     workflow_dispatch:
