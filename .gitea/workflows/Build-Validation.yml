@@ -1,4 +1,4 @@
-name: Build Validation
+name: CI
 
 on:
     workflow_dispatch:
@@ -6,10 +6,9 @@ on:
         branches:
             - main
     pull_request:
-        types: [opened, synchronize, reopened]
 
 jobs:
-    build:
+    format:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout Repository
@@ -23,8 +22,62 @@ jobs:
             - name: Install Dependencies
               run: npm ci
 
-            - name: Run Checks
-              run: npm run check
+            - name: Check Version
+              run: npm run version:check
+
+            - name: Check Formatting
+              run: npm run format:check
+
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v4
+
+            - name: Use Node.js 24.17.0
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '24.17.0'
+
+            - name: Install Dependencies
+              run: npm ci
+
+            - name: Run Lint
+              run: npm run lint
+
+    typecheck:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v4
+
+            - name: Use Node.js 24.17.0
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '24.17.0'
+
+            - name: Install Dependencies
+              run: npm ci
+
+            - name: Run Type Check
+              run: npm run typecheck
+
+    test-and-build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v4
+
+            - name: Use Node.js 24.17.0
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '24.17.0'
+
+            - name: Install Dependencies
+              run: npm ci
+
+            - name: Run Tests
+              run: npm test -- --runInBand
 
             - name: Run Build
               run: npm run build
